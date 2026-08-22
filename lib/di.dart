@@ -415,7 +415,8 @@ Future<void> setup({
       case HardwareWalletType.ledger:
         return getIt<LedgerViewModel>();
       case HardwareWalletType.trezor:
-        return getIt<TrezorConnectViewModel>();
+      case HardwareWalletType.onekey:
+        return getIt<TrezorConnectViewModel>(instanceName: type.name);
       case HardwareWalletType.cupcake:
       case HardwareWalletType.coldcard:
       case HardwareWalletType.seedsigner:
@@ -431,11 +432,25 @@ Future<void> setup({
   getIt.registerLazySingleton(BitboxViewModel.new);
 
   getIt.registerLazySingleton(
-    () => TrezorConnect("cakewallet://trezor_connect", appName: "Cake Wallet"),
+    () => TrezorConnect("xmrwallet://trezor_connect", appName: "XMR Wallet"),
   );
 
-  getIt.registerLazySingleton(
-    () => TrezorConnectViewModel(getIt<TrezorConnect>(), getIt<SecureStorage>()),
+  getIt.registerLazySingleton<TrezorConnectViewModel>(
+    () => TrezorConnectViewModel(
+      getIt<TrezorConnect>(),
+      getIt<SecureStorage>(),
+      hardwareWalletType: HardwareWalletType.trezor,
+    ),
+    instanceName: HardwareWalletType.trezor.name,
+  );
+
+  getIt.registerLazySingleton<TrezorConnectViewModel>(
+    () => TrezorConnectViewModel(
+      getIt<TrezorConnect>(),
+      getIt<SecureStorage>(),
+      hardwareWalletType: HardwareWalletType.onekey,
+    ),
+    instanceName: HardwareWalletType.onekey.name,
   );
 
   getIt.registerFactory<KeyService>(() => KeyService(getIt.get<SecureStorage>()));

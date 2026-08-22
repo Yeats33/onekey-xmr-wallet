@@ -43,7 +43,7 @@ abstract class WalletHardwareRestoreViewModelBase extends WalletCreationVM with 
   @observable
   String? error = null;
 
-  bool get passphraseAvailable => hardwareWalletVM.hardwareWalletType == HardwareWalletType.trezor;
+  bool get passphraseAvailable => hardwareWalletVM.hardwareWalletType.usesTrezorMoneroProtocol;
 
   // @observable
   ObservableList<HardwareAccountData> availableAccounts = ObservableList();

@@ -72,6 +72,8 @@ abstract class WalletKeysViewModelBase with Store {
         return 'BitBox';
       case HardwareWalletType.trezor:
         return 'Trezor';
+      case HardwareWalletType.onekey:
+        return 'OneKey';
       case HardwareWalletType.cupcake:
         return 'Cupcake';
       case HardwareWalletType.coldcard:

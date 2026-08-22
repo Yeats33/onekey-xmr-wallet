@@ -194,6 +194,8 @@ class _HardwareWalletProceedOnDeviceSheetState extends State<HardwareWalletProce
         return "assets/new-ui/hardware_wallets/device_ledger_nano_x.svg";
       case HardwareWalletType.trezor:
         return "assets/new-ui/hardware_wallets/device_trezor_safe_7.svg";
+      case HardwareWalletType.onekey:
+        return "assets/new-ui/hardware_wallets/device_onekey_pro.svg";
       case HardwareWalletType.cupcake:
         return "assets/images/cupcake.svg";
       case HardwareWalletType.coldcard:

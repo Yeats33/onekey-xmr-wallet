@@ -154,7 +154,7 @@ class ConnectDevicePageBodyState extends State<ConnectDevicePageBody> {
       if (usbDevices.length != dev.length) {
         setState(() => usbDevices = dev);
       }
-    } catch(e) {
+    } catch (e) {
       printV(e);
     }
     _isRefreshingUsb = false;
@@ -227,6 +227,8 @@ class ConnectDevicePageBodyState extends State<ConnectDevicePageBody> {
         return "assets/new-ui/hardware_wallets/device_trezor_safe_5.svg";
       case HardwareWalletDeviceType.trezorSafe7:
         return "assets/new-ui/hardware_wallets/device_trezor_safe_7.svg";
+      case HardwareWalletDeviceType.oneKeyPro:
+        return "assets/new-ui/hardware_wallets/device_onekey_pro.svg";
 
       default:
         return "assets/new-ui/hardware_wallets/device_ledger_nano_x.svg";
@@ -234,6 +236,10 @@ class ConnectDevicePageBodyState extends State<ConnectDevicePageBody> {
   }
 
   String get description {
+    if (widget.hardwareWalletVM.hardwareWalletType == HardwareWalletType.onekey) {
+      return "Connect OneKey Pro over Bluetooth or USB with Trezor compatibility disabled.";
+    }
+
     if (!Platform.isAndroid) {
       return S.of(context).connect_your_hardware_wallet_ble;
     }

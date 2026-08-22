@@ -22,8 +22,8 @@ class PackageInfo {
         buildNumber: packageInfo.buildNumber);
   }
 
-  static const _defaultCWAppName = 'Cake Wallet';
-  static const _defaultCWAppPackageName = 'com.cakewallet.cake_wallet';
+  static const _defaultCWAppName = 'XMR Wallet';
+  static const _defaultCWAppPackageName = 'com.yeats33.xmrwallet';
   static const _defaultCWAppVersion = '1.0.0';
   static const _defaultCWAppBuildNumber = '1';
 

@@ -150,6 +150,9 @@ class _DigitInputState extends State<DigitInput> implements TextInputClient {
   AutofillScope? get currentAutofillScope => null;
 
   @override
+  bool onFocusReceived() => false;
+
+  @override
   void performPrivateCommand(String action, Map<String, dynamic> data) {}
 
   @override

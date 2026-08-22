@@ -36,6 +36,9 @@ enum DeviceConnectionType {
           WalletType.polygon,
         ].contains(walletType);
         break;
+      case HardwareWalletType.onekey:
+        if (isIOS || walletType != WalletType.monero) return [];
+        return [DeviceConnectionType.ble, DeviceConnectionType.usb];
       case HardwareWalletType.cupcake:
       case HardwareWalletType.coldcard:
       case HardwareWalletType.seedsigner:

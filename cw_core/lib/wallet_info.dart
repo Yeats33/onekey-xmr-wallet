@@ -44,7 +44,34 @@ enum HardwareWalletType {
   coldcard,
   seedsigner,
   keystone,
-  trezor;
+  trezor,
+  onekey;
+}
+
+extension HardwareWalletTypeCompatibility on HardwareWalletType {
+  bool get usesTrezorMoneroProtocol =>
+      this == HardwareWalletType.trezor || this == HardwareWalletType.onekey;
+
+  String get displayName {
+    switch (this) {
+      case HardwareWalletType.ledger:
+        return 'Ledger';
+      case HardwareWalletType.bitbox:
+        return 'BitBox';
+      case HardwareWalletType.cupcake:
+        return 'Cupcake';
+      case HardwareWalletType.coldcard:
+        return 'Coldcard';
+      case HardwareWalletType.seedsigner:
+        return 'SeedSigner';
+      case HardwareWalletType.keystone:
+        return 'Keystone';
+      case HardwareWalletType.trezor:
+        return 'Trezor';
+      case HardwareWalletType.onekey:
+        return 'OneKey';
+    }
+  }
 }
 
 enum WalletInfoAddressType {
@@ -553,7 +580,8 @@ class WalletInfo {
   bool get isHardwareWallet => [
         HardwareWalletType.bitbox,
         HardwareWalletType.ledger,
-        HardwareWalletType.trezor
+        HardwareWalletType.trezor,
+        HardwareWalletType.onekey,
       ].contains(hardwareWalletType);
 
   DateTime get date => DateTime.fromMillisecondsSinceEpoch(timestamp);

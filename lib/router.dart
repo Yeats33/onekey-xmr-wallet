@@ -375,7 +375,7 @@ Route<dynamic> createRoute(RouteSettings settings) {
         (_) => getIt.get<NewWalletTypePage>(
           param1: NewWalletTypeArguments(
             onTypeSelected: (BuildContext context, WalletType type) {
-              if (hardwareWalletType == HardwareWalletType.trezor && type != WalletType.monero) {
+              if (hardwareWalletType.usesTrezorMoneroProtocol && type != WalletType.monero) {
                 Navigator.of(context).pushNamed(Routes.chooseHardwareWalletAccount,
                     arguments: [type, hardwareWalletType]);
                 return;
@@ -473,7 +473,7 @@ Route<dynamic> createRoute(RouteSettings settings) {
     case Routes.newReceivePage:
       if (FeatureFlag.hasNewUi) {
         return handleRouteWithPlatformAwareness(
-              (context) => Material(child: getIt.get<NewReceivePage>(param1: false, param2: null)),
+          (context) => Material(child: getIt.get<NewReceivePage>(param1: false, param2: null)),
           settings: settings,
         );
       }
@@ -835,8 +835,7 @@ Route<dynamic> createRoute(RouteSettings settings) {
       final useTestnet = args['useTestnet'] as bool;
       final toggleTestnet = args['toggleTestnet'] as Function(bool? val);
       final zcashNetwork = args['zcashNetwork'] as int? ?? ZcashNetworkType.mainnet;
-      final setZcashNetwork =
-          args['setZcashNetwork'] as void Function(int network)? ?? (_) {};
+      final setZcashNetwork = args['setZcashNetwork'] as void Function(int network)? ?? (_) {};
       final restoredWallet = args['restoredWallet'] as RestoredWallet?;
 
       final viewModelParam = {'type': type, 'isPow': false};
@@ -910,11 +909,13 @@ Route<dynamic> createRoute(RouteSettings settings) {
 
     case Routes.syncKeyImagesDevices:
       final hardwareWalletType = getIt<AppStore>().wallet!.hardwareWalletType;
-      if (hardwareWalletType == HardwareWalletType.trezor) {
+      if (hardwareWalletType?.usesTrezorMoneroProtocol ?? false) {
         return MaterialPageRoute<void>(
           builder: (_) => SyncKeyImagesSheet(
             appStore: getIt<AppStore>(),
-            trezorConnectVM: getIt<TrezorConnectViewModel>(),
+            trezorConnectVM: getIt<TrezorConnectViewModel>(
+              instanceName: hardwareWalletType!.name,
+            ),
           ),
         );
       }

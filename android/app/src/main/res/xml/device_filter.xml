@@ -8,4 +8,7 @@
     <usb-device vendor-id="21324" product-id="1"/>
     <usb-device vendor-id="4617" product-id="21440"/>
     <usb-device vendor-id="4617" product-id="21441"/>
+
+    <!-- OneKey Pro native firmware mode: 0x1209:0x4f4b -->
+    <usb-device vendor-id="4617" product-id="20299"/>
 </resources>

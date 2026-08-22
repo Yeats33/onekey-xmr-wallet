@@ -52,6 +52,29 @@ class SelectDeviceManufacturerPage extends BasePage {
           hardwareWalletType: HardwareWalletType.trezor,
           // tag: S.current.new_tag,
         ),
+        _DeviceManufacturer(
+          image: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.key_rounded,
+                size: 21,
+                color: currentTheme.colorScheme.onSurface,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'OneKey',
+                style: TextStyle(
+                  color: currentTheme.colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+          hardwareWalletType: HardwareWalletType.onekey,
+        ),
         if (Platform.isAndroid) ...[
           _DeviceManufacturer(
             image: SvgPicture.asset(
@@ -227,7 +250,7 @@ class SelectDeviceManufacturerPage extends BasePage {
 }
 
 class _DeviceManufacturer {
-  final SvgPicture image;
+  final Widget image;
   final HardwareWalletType? hardwareWalletType;
   final String? tag;
 

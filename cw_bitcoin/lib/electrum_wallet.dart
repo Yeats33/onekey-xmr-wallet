@@ -273,8 +273,8 @@ abstract class ElectrumWalletBase
       [HardwareWalletType? hardwareWalletType]) {
     switch (network) {
       case LitecoinNetwork.mainnet:
-        if ([HardwareWalletType.ledger, HardwareWalletType.trezor].contains(hardwareWalletType))
-          return Bip44Conf.litecoinMainNet.altKeyNetVer;
+        if ([HardwareWalletType.ledger, HardwareWalletType.trezor, HardwareWalletType.onekey]
+            .contains(hardwareWalletType)) return Bip44Conf.litecoinMainNet.altKeyNetVer;
         return null;
       default:
         return null;

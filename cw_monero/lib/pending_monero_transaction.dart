@@ -41,11 +41,12 @@ class PendingMoneroTransaction with PendingTransaction {
   String get amountFormatted => amount.toString();
 
   @override
-  bool shouldCommitUR() => isViewOnly && wallet.hardwareWalletType != HardwareWalletType.trezor;
+  bool shouldCommitUR() =>
+      isViewOnly && !(wallet.hardwareWalletType?.usesTrezorMoneroProtocol ?? false);
 
   @override
   Future<void> commit() async {
-    if (wallet.hardwareWalletType == HardwareWalletType.trezor) {
+    if (wallet.hardwareWalletType?.usesTrezorMoneroProtocol ?? false) {
       final ptr = Pointer<Void>.fromAddress(pendingTransactionDescription.pointerAddress);
       final ret = await monero.PendingTransaction_commitTrezor(ptr, 0);
 

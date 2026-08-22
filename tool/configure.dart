@@ -484,6 +484,7 @@ WalletCredentials createMoneroNewWalletCredentials({required String name, requir
   void setHardwareWalletService(Object wallet, HardwareWalletService service);
   HardwareWalletService getLedgerHardwareWalletService(ledger.LedgerConnection connection);
   HardwareWalletService getTrezorHardwareWalletService(trezor.TrezorClient client);
+  HardwareWalletService getOneKeyHardwareWalletService(trezor.TrezorClient client);
   Future<void> syncTrezor(Object wallet);
   Map<String, List<int>> debugCallLength();
   Map<String, dynamic> getWalletCacheDebug();

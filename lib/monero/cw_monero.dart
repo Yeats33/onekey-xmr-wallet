@@ -450,7 +450,7 @@ class CWMonero extends Monero {
   @override
   void setHardwareWalletService(Object wallet, HardwareWalletService service) {
     final moneroWallet = wallet as MoneroWallet;
-    moneroWallet.trezorService = service as MoneroTrezorService;
+    moneroWallet.hardwareSignerService = service as MoneroWireHardwareService;
   }
 
   @override
@@ -460,6 +460,10 @@ class CWMonero extends Monero {
   @override
   HardwareWalletService getTrezorHardwareWalletService(trezor.TrezorClient client) =>
       MoneroTrezorService(client);
+
+  @override
+  HardwareWalletService getOneKeyHardwareWalletService(trezor.TrezorClient client) =>
+      MoneroOneKeyNativeService(client);
 
   @override
   Future<void> syncTrezor(Object wallet) async {

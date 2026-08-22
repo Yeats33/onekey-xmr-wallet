@@ -26,7 +26,7 @@ class CreatePinWelcomePage extends BasePage {
 
   String appTitle(BuildContext context) {
     if (isMoneroOnly) {
-      return S.of(context).monero_com;
+      return 'XMR Wallet';
     }
 
     return S.of(context).cake_wallet;
@@ -34,7 +34,7 @@ class CreatePinWelcomePage extends BasePage {
 
   String appDescription(BuildContext context) {
     if (isMoneroOnly) {
-      return S.of(context).monero_com_wallet_text;
+      return 'Private Monero wallet with first-class OneKey and Trezor support';
     }
 
     return S.of(context).payment_made_easy;

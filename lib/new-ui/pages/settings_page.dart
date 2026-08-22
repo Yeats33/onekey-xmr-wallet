@@ -27,7 +27,8 @@ bool _hasWalletConnect(DashboardViewModel vm) => vm.hasWalletConnect;
 
 bool _requiresKeyImageSync(DashboardViewModel vm) =>
     vm.wallet.type == WalletType.monero &&
-    [HardwareWalletType.cupcake, HardwareWalletType.trezor].contains(vm.wallet.hardwareWalletType);
+        vm.wallet.hardwareWalletType == HardwareWalletType.cupcake ||
+    (vm.wallet.hardwareWalletType?.usesTrezorMoneroProtocol ?? false);
 
 class SettingsListItem {
   const SettingsListItem(

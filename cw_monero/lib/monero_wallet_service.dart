@@ -310,14 +310,14 @@ class MoneroWalletService extends WalletService<
           restoreHeight: credentials.height!,
           deviceName: 'Ledger',
         );
-      } else if (credentials.hardwareWalletService case MoneroTrezorService service) {
-        final trezor = Trezor(service);
+      } else if (credentials.hardwareWalletService case MoneroWireHardwareService service) {
+        final signer = MoneroHardwareSigner(service);
 
         if (credentials.passphrase != null) {
-          await trezor.newPassphraseSession(credentials.passphrase);
+          await signer.newPassphraseSession(credentials.passphrase);
         }
 
-        final watchCredentials = await trezor.getWatchCredentials();
+        final watchCredentials = await signer.getWatchCredentials();
 
         monero_wallet_manager.restoreWalletFromKeys(
           path: path,

@@ -3,10 +3,17 @@ import "dart:convert";
 import "package:cw_core/hardware/hardware_wallet_service.dart";
 import "package:trezor_flutter/trezor_flutter.dart";
 
-class MoneroTrezorService extends HardwareWalletService {
-  MoneroTrezorService(this.client);
-
+abstract class MoneroWireHardwareService extends HardwareWalletService {
+  MoneroWireHardwareService(this.client);
   final TrezorClient client;
+}
+
+class MoneroTrezorService extends MoneroWireHardwareService {
+  MoneroTrezorService(super.client);
+}
+
+class MoneroOneKeyNativeService extends MoneroWireHardwareService {
+  MoneroOneKeyNativeService(super.client);
 }
 
 class MoneroTrezorWatchCredentials {
@@ -16,10 +23,10 @@ class MoneroTrezorWatchCredentials {
   final String address;
 }
 
-class Trezor {
-  Trezor(this.service);
+class MoneroHardwareSigner {
+  MoneroHardwareSigner(this.service);
 
-  final MoneroTrezorService service;
+  final MoneroWireHardwareService service;
 
   String? _sessionPassphrase;
 

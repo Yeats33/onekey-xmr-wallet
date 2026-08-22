@@ -383,36 +383,36 @@ abstract class MoneroWalletBase
         currentWallet!.hasUnknownKeyImages();
   }
 
-  MoneroTrezorService? trezorService;
+  MoneroWireHardwareService? hardwareSignerService;
 
-  Future<Trezor> _getTrezor() async {
-    if (trezorService == null) throw Exception("Trezor not connected");
+  Future<MoneroHardwareSigner> _getHardwareSigner() async {
+    if (hardwareSignerService == null) throw Exception("Hardware wallet not connected");
 
-    final trezor = Trezor(trezorService!);
-    await trezor.newPassphraseSession(passphrase);
-    return trezor;
+    final signer = MoneroHardwareSigner(hardwareSignerService!);
+    await signer.newPassphraseSession(passphrase);
+    return signer;
   }
 
   Future<void> syncTrezor() async {
-    if (trezorService == null) throw Exception("Trezor not connected");
+    if (hardwareSignerService == null) throw Exception("Hardware wallet not connected");
 
     final ptr = Pointer<Void>.fromAddress(currentWallet!.ffiAddress());
     final tdis = monero.Wallet_exportTrezorTdis(ptr);
-    final trezor = await _getTrezor();
-    final response = await trezor.keyImageSync(tdis);
+    final signer = await _getHardwareSigner();
+    final response = await signer.keyImageSync(tdis);
     final success = monero.Wallet_importTrezorEncryptedKeyImagesJson(ptr, response);
 
     if (!success) throw Exception(monero.Wallet_errorString(ptr));
   }
 
   Future<String> signTrezorTransaction(String json) async {
-    final trezor = await _getTrezor();
-    return trezor.signTransaction(json);
+    final signer = await _getHardwareSigner();
+    return signer.signTransaction(json);
   }
 
   @override
   Future<PendingTransaction> createTransaction(Object credentials) async {
-    if (hardwareWalletType == HardwareWalletType.trezor) {
+    if (hardwareWalletType?.usesTrezorMoneroProtocol ?? false) {
       for (int i = 0; i < 2; i++) {
         try {
           return await _createTransaction(credentials);

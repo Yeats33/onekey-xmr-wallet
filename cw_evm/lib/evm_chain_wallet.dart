@@ -517,6 +517,7 @@ abstract class EVMChainWalletBase
         walletAddresses.address = walletInfo.address;
         break;
       case HardwareWalletType.trezor:
+      case HardwareWalletType.onekey:
         _evmChainPrivateKey = EvmTrezorCredentials(walletInfo.address);
         walletAddresses.address = walletInfo.address;
         break;

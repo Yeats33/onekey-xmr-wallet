@@ -42,7 +42,11 @@ class BitboxHardwareWalletDevice extends HardwareWalletDevice {
   HardwareWalletConnectionType get connectionType => HardwareWalletConnectionType.usb;
 }
 
-class TrezorHardwareWalletDevice extends HardwareWalletDevice {
+abstract class TrezorCompatibleHardwareWalletDevice extends HardwareWalletDevice {
+  trezor.TrezorDevice get device;
+}
+
+class TrezorHardwareWalletDevice extends TrezorCompatibleHardwareWalletDevice {
   final trezor.TrezorDevice device;
 
   TrezorHardwareWalletDevice(this.device);
@@ -52,6 +56,22 @@ class TrezorHardwareWalletDevice extends HardwareWalletDevice {
 
   @override
   HardwareWalletDeviceType get type => device.deviceInfo.toGeneric();
+
+  @override
+  HardwareWalletConnectionType get connectionType => device.connectionType.toGeneric();
+}
+
+class OneKeyHardwareWalletDevice extends TrezorCompatibleHardwareWalletDevice {
+  OneKeyHardwareWalletDevice(this.device);
+
+  @override
+  final trezor.TrezorDevice device;
+
+  @override
+  String get name => device.name.toLowerCase().contains('onekey') ? device.name : 'OneKey Pro';
+
+  @override
+  HardwareWalletDeviceType get type => HardwareWalletDeviceType.oneKeyPro;
 
   @override
   HardwareWalletConnectionType get connectionType => device.connectionType.toGeneric();
@@ -71,7 +91,8 @@ enum HardwareWalletDeviceType {
   trezorModelT,
   trezorSafe3,
   trezorSafe5,
-  trezorSafe7;
+  trezorSafe7,
+  oneKeyPro;
 }
 
 enum HardwareWalletConnectionType {

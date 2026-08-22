@@ -21,6 +21,11 @@ case $APP_ANDROID_TYPE in
 		ANDROID_ICON=$MONERO_COM_PATH
 		ANDROID_ICON_SET=$MONEROCOM_ICON_SET_PATH
 	;;
+	"onekey-xmr")
+		APP_LOGO=$ASSETS_DIR/images/monero.com_logo.png
+		ANDROID_ICON=$MONERO_COM_PATH
+		ANDROID_ICON_SET=$MONEROCOM_ICON_SET_PATH
+	;;
 	"cakewallet")
     	APP_LOGO=$ASSETS_DIR/images/cakewallet_logo.png
     	ANDROID_ICON=$CAKEWALLET_PATH
@@ -43,6 +48,5 @@ if [[ $GITHUB_HUH == "yeah" ]]; then
 	done
 fi
 set +x
-
 
 

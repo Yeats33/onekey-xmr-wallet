@@ -126,7 +126,7 @@ abstract class SupportViewModelBase with Store {
   }
 
   String get appVersion =>
-      "${isMoneroOnly ? "Monero.com" : "Cake Wallet"} - ${_appStore.settingsStore.appVersion}";
+      "${isMoneroOnly ? "XMR Wallet" : "Cake Wallet"} - ${_appStore.settingsStore.appVersion}";
 
   String get fiatApiMode => _appStore.settingsStore.fiatApiMode.title;
 

@@ -30,7 +30,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
-        android:name=".Application"
+        android:name="com.monero.app.Application"
         android:label="${APP_NAME}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
@@ -44,7 +44,7 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.monero.app.MainActivity"
             android:launchMode="singleInstance"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -55,77 +55,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="cakewallet"
-                    android:host="y.at" />
-            </intent-filter>
             <!-- currencies qr code scheme -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="__APP_SCHEME__" />
-                <data android:scheme="bitcoin" />
-                <data android:scheme="bitcoin-wallet" />
-                <data android:scheme="bitcoin_wallet" />
                 <data android:scheme="monero" />
                 <data android:scheme="monero-wallet" />
                 <data android:scheme="monero_wallet" />
-                <data android:scheme="litecoin" />
-                <data android:scheme="litecoin-wallet" />
-                <data android:scheme="litecoin_wallet" />
-                <data android:scheme="ethereum" />
-                <data android:scheme="ethereum-wallet" />
-                <data android:scheme="ethereum_wallet" />
-                <data android:scheme="nano" />
-                <data android:scheme="nano-wallet" />
-                <data android:scheme="nano_wallet" />
-                <data android:scheme="bitcoincash" />
-                <data android:scheme="bitcoincash-wallet" />
-                <data android:scheme="bitcoincash_wallet" />
-                <data android:scheme="polygon" />
-                <data android:scheme="polygon-wallet" />
-                <data android:scheme="polygon_wallet" />
-                <data android:scheme="solana-wallet" />
-                <data android:scheme="tron" />
-                <data android:scheme="tron-wallet" />
-                <data android:scheme="tron_wallet" />
-                <data android:scheme="wownero" />
-                <data android:scheme="wownero-wallet" />
-                <data android:scheme="wownero_wallet" />
-                <data android:scheme="zano" />
-                <data android:scheme="zano-wallet" />
-                <data android:scheme="zano_wallet" />
-                <data android:scheme="decred" />
-                <data android:scheme="decred-wallet" />
-                <data android:scheme="decred_wallet" />
-                <data android:scheme="dogecoin" />
-                <data android:scheme="dogecoin-wallet" />
-                <data android:scheme="dogecoin_wallet" />
-                <data android:scheme="base" />
-                <data android:scheme="base-wallet" />
-                <data android:scheme="base_wallet" />
-                <data android:scheme="arbitrum" />
-                <data android:scheme="arbitrum-wallet" />
-                <data android:scheme="arbitrum_wallet" />
-                <data android:scheme="bsc" />
-                <data android:scheme="bsc-wallet" />
-                <data android:scheme="bsc_wallet" />
-                <data android:scheme="zcash" />
-                <data android:scheme="zcash-wallet" />
-                <data android:scheme="lightning" />
-                <data android:scheme="lightning-wallet" />
-            </intent-filter>
-            <!-- nano-gpt link scheme -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="nano-gpt" />
             </intent-filter>
 
 

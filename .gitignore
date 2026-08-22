@@ -228,3 +228,6 @@ scripts/reown_flutter
 
 *.salive
 android/.kotlin
+
+# Local signed Android packages
+/dist/

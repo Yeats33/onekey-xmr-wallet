@@ -2,11 +2,15 @@
 
 MONERO_COM=monero.com
 CAKEWALLET=cakewallet
+ONEKEY_XMR=onekey-xmr
 HAVEN=haven
 CONFIG_ARGS=""
 
 case $APP_ANDROID_TYPE in
         $MONERO_COM)
+                CONFIG_ARGS="--monero"
+                ;;
+        $ONEKEY_XMR)
                 CONFIG_ARGS="--monero"
                 ;;
         $CAKEWALLET)

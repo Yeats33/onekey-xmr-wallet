@@ -5,6 +5,7 @@ import "dart:io";
 import "package:cake_wallet/bitcoin/bitcoin.dart";
 import "package:cake_wallet/core/secure_storage.dart";
 import "package:cake_wallet/entities/hardware_wallet/hardware_wallet_device.dart";
+import "package:cake_wallet/entities/hardware_wallet/monero_usb_interface.dart";
 import "package:cake_wallet/evm/evm.dart";
 import "package:cake_wallet/main.dart";
 import "package:cake_wallet/monero/monero.dart";
@@ -32,7 +33,14 @@ part "trezor_connect_view_model.g.dart";
 class TrezorConnectViewModel = TrezorConnectViewModelBase with _$TrezorConnectViewModel;
 
 abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with Store {
-  TrezorConnectViewModelBase(this.trezorConnect, this._secureStorage) {
+  TrezorConnectViewModelBase(
+    this.trezorConnect,
+    this._secureStorage, {
+    this.hardwareWalletType = HardwareWalletType.trezor,
+  }) : assert(
+          hardwareWalletType == HardwareWalletType.trezor ||
+              hardwareWalletType == HardwareWalletType.onekey,
+        ) {
     if (_doesSupportHardwareWallets) {
       reaction((_) => isBleEnabled, (_) {
         if (isBleEnabled) {
@@ -42,7 +50,9 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       updateBleState();
 
       if (!Platform.isIOS) {
-        trezorUSB = sdk.TrezorInterface.usb();
+        usbInterface = hardwareWalletType == HardwareWalletType.onekey
+            ? OneKeyMoneroUsbInterface()
+            : TrezorMoneroUsbInterface();
       }
     }
   }
@@ -50,8 +60,11 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   final connect_sdk.TrezorConnect trezorConnect;
   final SecureStorage _secureStorage;
 
-  late final sdk.TrezorInterface trezorBLE;
-  late final sdk.TrezorInterface trezorUSB;
+  @override
+  final HardwareWalletType hardwareWalletType;
+
+  late final MoneroBleInterface bleInterface;
+  late final MoneroUsbInterface usbInterface;
 
   sdk.ThpState? _state;
 
@@ -59,7 +72,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
     if (isMoneroOnly) {
       return DeviceConnectionType.supportedConnectionTypes(
         WalletType.monero,
-        HardwareWalletType.trezor,
+        hardwareWalletType,
         Platform.isIOS,
       ).isNotEmpty;
     }
@@ -71,28 +84,30 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
 
   Future<void> _initBLE() async {
     if (isBleEnabled && !_bleIsInitialized) {
-      trezorBLE = sdk.TrezorInterface.ble(
-        onPermissionRequest: (_) async {
-          if (Platform.isMacOS) {
-            return true;
-          }
-
-          final Map<Permission, PermissionStatus> statuses = await [
-            Permission.bluetoothScan,
-            Permission.bluetoothConnect,
-            Permission.bluetoothAdvertise,
-          ].request();
-
-          return statuses.values.where((status) => status.isDenied).isEmpty;
-        },
-        bleOptions: sdk.BluetoothOptions(maxScanDuration: const Duration(minutes: 5)),
-      );
+      final options = sdk.BluetoothOptions(maxScanDuration: const Duration(minutes: 5));
+      bleInterface = hardwareWalletType == HardwareWalletType.onekey
+          ? OneKeyMoneroBleInterface(
+              onPermissionRequest: _requestBluetoothPermission,
+              options: options,
+            )
+          : TrezorMoneroBleInterface(
+              onPermissionRequest: _requestBluetoothPermission,
+              options: options,
+            );
       _bleIsInitialized = true;
     }
   }
 
-  @override
-  HardwareWalletType get hardwareWalletType => HardwareWalletType.trezor;
+  Future<bool> _requestBluetoothPermission(sdk.AvailabilityState _) async {
+    if (Platform.isMacOS) return true;
+
+    final Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.bluetoothAdvertise,
+    ].request();
+    return statuses.values.where((status) => status.isDenied).isEmpty;
+  }
 
   @override
   @observable
@@ -117,20 +132,24 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   }
 
   @override
-  Stream<HardwareWalletDevice> scanForBleDevices() =>
-      trezorBLE.scan().map(TrezorHardwareWalletDevice.new);
+  Stream<HardwareWalletDevice> scanForBleDevices() => bleInterface.scan().map(_wrapDevice);
 
   @override
   Future<List<HardwareWalletDevice>> getAllUsbDevices() =>
-      trezorUSB.devices.then((devices) => devices.map(TrezorHardwareWalletDevice.new).toList());
+      usbInterface.devices.then((devices) => devices.map(_wrapDevice).toList());
+
+  HardwareWalletDevice _wrapDevice(sdk.TrezorDevice device) =>
+      hardwareWalletType == HardwareWalletType.onekey
+          ? OneKeyHardwareWalletDevice(device)
+          : TrezorHardwareWalletDevice(device);
 
   @override
   Future<void> stopScanning() async {
     if (_bleIsInitialized) {
-      await trezorBLE.stopScanning();
+      await bleInterface.stopScanning();
     }
     if (!Platform.isIOS) {
-      await trezorUSB.stopScanning();
+      await usbInterface.stopScanning();
     }
   }
 
@@ -150,7 +169,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
     WalletType type, [
     bool isRetry = false,
   ]) async {
-    if (device is! TrezorHardwareWalletDevice) {
+    if (device is! TrezorCompatibleHardwareWalletDevice) {
       return false;
     }
     if (isConnecting) {
@@ -160,9 +179,9 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
     paringState = TrezorParingState.initial;
 
     try {
-      final trezorInterface =
-          device.connectionType == HardwareWalletConnectionType.ble ? trezorBLE : trezorUSB;
-      final connection = await trezorInterface.connect(device.device);
+      final connection = device.connectionType == HardwareWalletConnectionType.ble
+          ? await bleInterface.connect(device.device)
+          : await usbInterface.connect(device.device);
 
       if (!isRetry) {
         unawaited(
@@ -199,7 +218,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       _client = sdk.TrezorClient.getClientForConnection(
         connection,
         _state!,
-        "Cake Wallet",
+        "XMR Wallet",
         deviceInfo,
         onPinCode,
       );
@@ -251,7 +270,9 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   HardwareWalletService getHardwareWalletService(WalletType type) {
     switch (type) {
       case WalletType.monero:
-        return monero!.getTrezorHardwareWalletService(_client!);
+        return hardwareWalletType == HardwareWalletType.onekey
+            ? monero!.getOneKeyHardwareWalletService(_client!)
+            : monero!.getTrezorHardwareWalletService(_client!);
       case WalletType.bitcoin:
         return bitcoin!.getTrezorHardwareWalletService(trezorConnect, true);
       case WalletType.litecoin:
@@ -276,14 +297,17 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       case WalletType.polygon:
         return evm!.setHardwareWalletService(wallet, getHardwareWalletService(wallet.type));
       default:
-        throw Exception("Unexpected wallet type: ${wallet.type} for trezor");
+        throw Exception(
+          "Unexpected wallet type: ${wallet.type} for ${hardwareWalletType.displayName}",
+        );
     }
   }
 
   final EncryptionFileUtils _encryptionFileUtils = encryptionFileUtilsFor(true);
-  static const String _secureStorageKey = "com.cakewallet.trezor/thp_state";
+  String get _secureStorageKey => "com.yeats33.xmrwallet.${hardwareWalletType.name}/thp_state";
 
-  Future<String> get _thpJsonFile async => "${(await getAppDir()).path}/thp_state.json.enc";
+  Future<String> get _thpJsonFile async =>
+      "${(await getAppDir()).path}/thp_state_${hardwareWalletType.name}.json.enc";
 
   Future<sdk.ThpState> _getState() async {
     final password = await _secureStorage.read(key: _secureStorageKey);
@@ -317,7 +341,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       _state = state;
       return state;
     } catch (_) {
-      throw Exception("Unable to save Trezor State");
+      throw Exception("Unable to save ${hardwareWalletType.displayName} state");
     }
   }
 
