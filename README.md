@@ -1,5 +1,7 @@
 # XMR Wallet
 
+[![XMR Wallet Android](https://github.com/Yeats33/onekey-xmr-wallet/actions/workflows/xmr-wallet-android.yml/badge.svg)](https://github.com/Yeats33/onekey-xmr-wallet/actions/workflows/xmr-wallet-android.yml)
+
 Android-only, Monero-only wallet with first-class OneKey Pro and Trezor hardware-wallet support.
 
 This project is based on [Cake Wallet](https://github.com/cake-tech/cake_wallet) v6.4.1 and retains its MIT license. It is an independent project and is not affiliated with OneKey, Trezor, or Cake Labs.
@@ -37,6 +39,14 @@ It can be installed alongside Cake Wallet and Monero.com because it uses a separ
 Cake's shared Android plugins and native libraries must be prepared first. See [the Android build and device-testing guide](docs/ONEKEY_XMR_ANDROID.md).
 
 Build outputs are written to `dist/android/` and deliberately excluded from Git history.
+
+The `XMR Wallet Android` workflow runs the OneKey USB/BLE tests and builds signed APK artifacts on every push and pull request. Tags matching the configured application version, such as `v1.2.0`, publish the production-signed APKs and `SHA256SUMS` as a GitHub Release.
+
+Production APK signing certificate SHA-256:
+
+```text
+1A:4B:25:DE:7B:4A:F3:D8:FB:72:97:9E:6F:9F:E7:1B:D9:66:B4:FC:D4:75:54:59:C6:EF:FC:89:DB:CB:1B:43
+```
 
 ## Testing
 

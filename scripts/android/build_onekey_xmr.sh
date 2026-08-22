@@ -3,9 +3,6 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/../.." && pwd)"
-version="1.2.0"
-output_dir="$project_root/dist/android/v$version"
-
 required_files=(
   "$project_root/scripts/bitbox_flutter/android/libs/api.aar"
   "$project_root/scripts/reown_flutter/scripts/yttrium/crates/kotlin-ffi/android/src/main/kotlin/com/reown/yttrium/uniffi_yttrium.kt"
@@ -24,6 +21,8 @@ done
 
 pushd "$script_dir" >/dev/null
 source ./app_env.sh onekey-xmr
+version="$APP_ANDROID_VERSION"
+output_dir="$project_root/dist/android/v$version"
 ./app_config.sh
 popd >/dev/null
 

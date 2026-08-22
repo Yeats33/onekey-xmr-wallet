@@ -64,6 +64,19 @@ with Cake's helper and run:
 Artifacts are written to `dist/android/v1.2.0/` for ARM64, 32-bit ARM, and
 x86_64. Modern phones should use the `arm64-v8a` APK.
 
+## Continuous integration and releases
+
+`.github/workflows/xmr-wallet-android.yml` runs on pushes, pull requests,
+manual dispatches, and `v*` tags. Native build inputs are restored from pinned
+Cake Android dependency images with immutable SHA-256 digests. Normal CI builds
+use an ephemeral signing key; tagged releases require the repository's
+`ANDROID_RELEASE_*` secrets and publish the three APKs plus `SHA256SUMS`.
+
+The production signing certificate SHA-256 is
+`1A:4B:25:DE:7B:4A:F3:D8:FB:72:97:9E:6F:9F:E7:1B:D9:66:B4:FC:D4:75:54:59:C6:EF:FC:89:DB:CB:1B:43`.
+The corresponding private key is not stored in Git and must be backed up
+separately for all future Android updates.
+
 ## Device acceptance test
 
 Do not use significant funds until all of these pass on a physical Android

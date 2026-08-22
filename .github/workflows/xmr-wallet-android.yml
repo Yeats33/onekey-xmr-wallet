@@ -1,0 +1,166 @@
+name: XMR Wallet Android
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: xmr-wallet-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build Android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+          cache: true
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager \
+            "platforms;android-36" \
+            "build-tools;35.0.0" \
+            "ndk;28.2.13676358"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install host tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential file unzip
+
+      - name: Restore pinned native dependencies
+        run: ./scripts/android/restore_ci_dependencies.sh
+
+      - name: Configure XMR-only application
+        run: ./configure_onekey_xmr.sh
+
+      - name: Verify tag matches application version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          pushd scripts/android >/dev/null
+          source ./app_env.sh onekey-xmr
+          popd >/dev/null
+          test "${GITHUB_REF_NAME}" = "v${APP_ANDROID_VERSION}"
+
+      - name: Run OneKey transport tests
+        run: |
+          flutter test test/onekey_native_usb_test.dart test/onekey_native_ble_test.dart
+          pushd cw_core >/dev/null
+          flutter test test/hardware_wallet_type_test.dart
+          popd >/dev/null
+
+      - name: Configure release signing
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_PASSWORD"
+          test -n "$KEY_ALIAS"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/key.jks
+          dart run tool/generate_android_key_properties.dart \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=key.jks" \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD"
+
+      - name: Configure CI signing
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          keytool -genkeypair -noprompt \
+            -keystore android/app/key.jks \
+            -storepass xmr-wallet-ci \
+            -keypass xmr-wallet-ci \
+            -alias xmr-wallet-ci \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 30 \
+            -dname "CN=XMR Wallet CI,O=Yeats33,C=DE"
+          dart run tool/generate_android_key_properties.dart \
+            keyAlias=xmr-wallet-ci \
+            storeFile=key.jks \
+            storePassword=xmr-wallet-ci \
+            keyPassword=xmr-wallet-ci
+
+      - name: Build signed APKs
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+          ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+        run: ./scripts/android/build_onekey_xmr.sh
+
+      - name: Verify APKs
+        run: |
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          export PATH="$build_tools:$PATH"
+          version="$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)"
+          output_dir="dist/android/v$version"
+          sha256sum -c "$output_dir/SHA256SUMS"
+          for apk in "$output_dir"/*.apk; do
+            apksigner verify "$apk"
+            zipalign -c -P 16 4 "$apk"
+          done
+          aapt dump badging "$output_dir/xmr-wallet-$version-arm64-v8a.apk" | \
+            grep "package: name='com.yeats33.xmrwallet'"
+
+      - name: Upload CI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmr-wallet-android-${{ github.sha }}
+          path: dist/android/v*/
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download signed APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: xmr-wallet-android-${{ github.sha }}
+          path: release-artifacts
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release-artifacts/**/*.apk
+            release-artifacts/**/SHA256SUMS
