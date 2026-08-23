@@ -11,9 +11,10 @@ dependencies are selected by Cake's configure generator.
 | PWallet | `pwallet` | XMR and ZEC | `com.yeats33.pwallet` | `pwallet-v*` |
 
 The package identifiers are intentionally independent, so all three products
-can be installed on the same device. XMR Wallet retains its existing production
-signing identity. ZEC Wallet and PWallet remain pre-release until the signing
-boundaries below are implemented and audited.
+can be installed on the same device. Version 1.3.0 is shared across the three
+products. XMR Wallet retains its existing production signing identity. ZEC
+Wallet and PWallet releases are explicitly marked as pre-releases until the
+physical-device and external-security reviews below are complete.
 
 ## Signing boundaries
 
@@ -85,5 +86,7 @@ matching provisioning profile.
 
 Pushes and pull requests build all Android products. A product-specific tag
 builds and publishes only the matching product. APK and IPA checksums contain
-portable relative filenames. No ZEC or PWallet production tag should be pushed
-until physical-device tests and an external security review are complete.
+portable relative filenames and use distinct Android/iOS release-asset names.
+ZEC Wallet and PWallet tags publish GitHub pre-releases; they must not be
+promoted to stable releases until physical-device tests and an external
+security review are complete.

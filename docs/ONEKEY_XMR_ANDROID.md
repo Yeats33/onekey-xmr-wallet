@@ -11,7 +11,7 @@ implements for hardware XMR signing.
 - App name: `XMR Wallet`
 - Android application ID: `com.yeats33.xmrwallet`
 - Deep-link scheme: `xmrwallet`
-- Version: `1.2.1`
+- Version: `1.3.0`
 - App type: `onekey-xmr`
 
 The application ID is independent of Cake Wallet (`com.cakewallet.cake_wallet`)
@@ -61,7 +61,7 @@ with Cake's helper and run:
 ./scripts/android/build_onekey_xmr.sh
 ```
 
-Artifacts are written to `dist/android/v1.2.1/` for ARM64, 32-bit ARM, and
+Artifacts are written to `dist/android/xmr-wallet/v1.3.0/` for ARM64, 32-bit ARM, and
 x86_64. Modern phones should use the `arm64-v8a` APK.
 
 ## Continuous integration and releases

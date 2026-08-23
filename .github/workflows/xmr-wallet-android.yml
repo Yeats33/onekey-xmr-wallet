@@ -207,16 +207,31 @@ jobs:
       contents: write
 
     steps:
+      - name: Check out release notes
+        uses: actions/checkout@v5
+
       - name: Download signed APKs
         uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.artifact }}-android-${{ github.sha }}
           path: release-artifacts
 
+      - name: Name Android checksum asset
+        env:
+          ARTIFACT_NAME: ${{ matrix.artifact }}
+        run: |
+          version="${GITHUB_REF_NAME#*-v}"
+          checksum="$(find release-artifacts -type f -name SHA256SUMS -print -quit)"
+          test -n "$checksum"
+          mv "$checksum" "release-artifacts/${ARTIFACT_NAME}-${version}-android-SHA256SUMS"
+          test -s "docs/releases/${GITHUB_REF_NAME}.md"
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: docs/releases/${{ github.ref_name }}.md
           generate_release_notes: true
+          prerelease: ${{ matrix.app_type != 'onekey-xmr' }}
           files: |
             release-artifacts/**/*.apk
-            release-artifacts/**/SHA256SUMS
+            release-artifacts/*-android-SHA256SUMS

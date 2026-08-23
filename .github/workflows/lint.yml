@@ -34,6 +34,9 @@ jobs:
             configure_onekey_zec.sh \
             configure_pwallet.sh \
             configure_wallet_ios.sh \
+            scripts/validate_release_metadata.sh \
+            scripts/ios/app_icon.sh \
+            scripts/ios/build_torch.sh \
             scripts/android/build_wallet.sh \
             scripts/android/build_onekey_xmr.sh \
             scripts/android/build_onekey_zec.sh \
@@ -45,3 +48,6 @@ jobs:
             scripts/ios/build_onekey_xmr.sh \
             scripts/ios/build_onekey_zec.sh \
             scripts/ios/build_pwallet.sh
+
+      - name: Validate 1.3.0 release metadata
+        run: bash scripts/validate_release_metadata.sh 1.3.0

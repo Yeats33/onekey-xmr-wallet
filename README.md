@@ -28,9 +28,9 @@ The Monero wire-message schema remains shared with the implementation in OneKey 
 
 | Application | Identifier | Deep-link scheme | Version |
 | --- | --- | --- | --- |
-| XMR Wallet | `com.yeats33.xmrwallet` | `xmrwallet` | `1.2.1` |
-| ZEC Wallet | `com.yeats33.zecwallet` | `zecwallet` | `0.1.0` |
-| PWallet | `com.yeats33.pwallet` | `pwallet` | `0.1.0` |
+| XMR Wallet | `com.yeats33.xmrwallet` | `xmrwallet` | `1.3.0` |
+| ZEC Wallet | `com.yeats33.zecwallet` | `zecwallet` | `1.3.0` |
+| PWallet | `com.yeats33.pwallet` | `pwallet` | `1.3.0` |
 
 All products can be installed together and alongside Cake Wallet or Monero.com.
 See [the complete product and signing matrix](docs/PRIVACY_WALLET_PRODUCTS.md).
@@ -48,7 +48,7 @@ Cake's shared Android plugins and native libraries must be prepared first. See [
 
 Build outputs are written below `dist/android/<product>/` and deliberately excluded from Git history.
 
-The `Privacy Wallets Android` workflow builds all three product matrices on pushes and pull requests. Product tags such as `xmr-v1.2.1`, `zec-v0.1.0`, or `pwallet-v0.1.0` publish only the matching signed APKs and `SHA256SUMS`.
+The `Privacy Wallets Android` workflow builds all three product matrices on pushes and pull requests. Product tags such as `xmr-v1.3.0`, `zec-v1.3.0`, or `pwallet-v1.3.0` publish only the matching signed APKs and platform-specific checksum files. ZEC Wallet and PWallet releases remain marked as pre-releases until their physical-device and external-security reviews are complete.
 
 The `Privacy Wallets iOS` workflow builds clearly named unsigned IPA archives.
 They verify the iOS build and can be re-signed for sideloading, but they are not
