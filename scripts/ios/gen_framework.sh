@@ -1,9 +1,11 @@
-#!/bin/sh
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-IOS_DIR="$(pwd)/../../ios"
-monero_c_tag="${MONERO_C_TAG:-$(cd $(pwd)/../../scripts/monero_c/; git describe --tags)}"
-DYLIB_PATH="$(pwd)/../../scripts/monero_c/release/${monero_c_tag}/"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_root="$(cd "$script_dir/../.." && pwd)"
+IOS_DIR="$project_root/ios"
+monero_c_tag="${MONERO_C_TAG:-$(git -C "$project_root/scripts/monero_c" describe --tags)}"
+DYLIB_PATH="$project_root/scripts/monero_c/release/$monero_c_tag"
 TMP_DIR="${IOS_DIR}/tmp"
 
 rm -rf "${IOS_DIR:?}/MoneroWallet.xcframework" "${IOS_DIR:?}/WowneroWallet.xcframework" "${IOS_DIR:?}/ZanoWallet.xcframework"
