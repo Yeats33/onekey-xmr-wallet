@@ -67,6 +67,11 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.24.1
+
       - name: Install native build tools
         run: brew install automake cmake coreutils libtool pkg-config
 

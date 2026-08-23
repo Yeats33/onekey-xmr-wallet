@@ -1,6 +1,7 @@
 #!/bin/sh
 source "$(cd "$(dirname "$0")/.." && pwd)/functions.sh"
 
+cd "$(dirname "$0")"
 . ./config.sh
 # ./install_missing_headers.sh
 # ./build_openssl.sh
@@ -10,8 +11,6 @@ source "$(cd "$(dirname "$0")/.." && pwd)/functions.sh"
 # ./build_unbound.sh
 
 set -x -e
-
-cd "$(dirname "$0")"
 
 ../prepare_moneroc.sh
 
