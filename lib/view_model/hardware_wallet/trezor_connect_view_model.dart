@@ -6,15 +6,19 @@ import "package:cake_wallet/bitcoin/bitcoin.dart";
 import "package:cake_wallet/core/secure_storage.dart";
 import "package:cake_wallet/entities/hardware_wallet/hardware_wallet_device.dart";
 import "package:cake_wallet/entities/hardware_wallet/monero_usb_interface.dart";
+import "package:cake_wallet/entities/hardware_wallet/onekey_cipher_key_value.dart";
+import "package:cake_wallet/entities/hardware_wallet/onekey_zcash_seed_key_protector.dart";
 import "package:cake_wallet/evm/evm.dart";
 import "package:cake_wallet/main.dart";
 import "package:cake_wallet/monero/monero.dart";
 import "package:cake_wallet/new-ui/widgets/hardware_wallet/proceed_on_device_sheet.dart";
 import "package:cake_wallet/view_model/hardware_wallet/hardware_wallet_view_model.dart";
 import "package:cake_wallet/wallet_type_utils.dart";
+import "package:cake_wallet/zcash/zcash.dart";
 import "package:cw_core/encryption_file_utils.dart";
 import "package:cw_core/hardware/device_connection_type.dart";
 import "package:cw_core/hardware/hardware_wallet_service.dart";
+import "package:cw_core/hardware/hardware_seed_key_protector.dart";
 import "package:cw_core/key.dart";
 import "package:cw_core/root_dir.dart";
 import "package:cw_core/utils/print_verbose.dart";
@@ -99,7 +103,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   }
 
   Future<bool> _requestBluetoothPermission(sdk.AvailabilityState _) async {
-    if (Platform.isMacOS) return true;
+    if (Platform.isIOS || Platform.isMacOS) return true;
 
     final Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetoothScan,
@@ -226,7 +230,7 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       _client = sdk.TrezorClient.getClientForConnection(
         connection,
         _state!,
-        "XMR Wallet",
+        approximatedAppName,
         deviceInfo,
         onPinCode,
       );
@@ -270,9 +274,11 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   }
 
   @override
-  bool isConnected(WalletType type) => type == WalletType.monero
-      ? _client != null && _client?.connection.isDisconnected == false
-      : true;
+  bool isConnected(WalletType type) {
+    final usesNativeClient = type == WalletType.monero ||
+        (type == WalletType.zcash && hardwareWalletType == HardwareWalletType.onekey);
+    return usesNativeClient ? _client != null && _client?.connection.isDisconnected == false : true;
+  }
 
   @override
   HardwareWalletService getHardwareWalletService(WalletType type) {
@@ -293,6 +299,18 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
     }
   }
 
+  OneKeyCipherKeyValueService get oneKeyCipherKeyValueService {
+    if (hardwareWalletType != HardwareWalletType.onekey || _client == null) {
+      throw StateError("OneKey is not connected");
+    }
+    return OneKeyCipherKeyValueService(_client!);
+  }
+
+  @override
+  HardwareSeedKeyProtector? get seedKeyProtector => hardwareWalletType == HardwareWalletType.onekey
+      ? OneKeyZcashSeedKeyProtector(oneKeyCipherKeyValueService, _secureStorage)
+      : null;
+
   @override
   Future<void> initWallet(WalletBase wallet) async {
     switch (wallet.type) {
@@ -304,6 +322,13 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
       case WalletType.ethereum:
       case WalletType.polygon:
         return evm!.setHardwareWalletService(wallet, getHardwareWalletService(wallet.type));
+      case WalletType.zcash:
+        final protector = seedKeyProtector;
+        if (protector == null) {
+          throw StateError('OneKey ZEC protection is unavailable');
+        }
+        zcash!.setSeedKeyProtector(wallet, protector);
+        return;
       default:
         throw Exception(
           "Unexpected wallet type: ${wallet.type} for ${hardwareWalletType.displayName}",

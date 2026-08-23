@@ -120,6 +120,7 @@ import 'package:cw_core/wallet_base.dart';
 import 'package:cw_core/wallet_credentials.dart';
 import 'package:cw_core/wallet_info.dart';
 import 'package:cw_core/wallet_service.dart';
+import 'package:cw_core/hardware/hardware_wallet_service.dart';
 import 'package:cw_core/wallet_type.dart';
 import 'package:cw_core/utils/print_verbose.dart';
 import 'package:cw_core/get_height_by_date.dart';
@@ -336,12 +337,12 @@ import 'package:cw_core/balance.dart';
 import 'package:cw_core/output_info.dart';
 import 'package:cake_wallet/view_model/send/output.dart';
 import 'package:cw_core/wallet_service.dart';
+import 'package:cw_core/hardware/hardware_wallet_service.dart';
 import 'package:hive/hive.dart';
 import 'package:ledger_flutter_plus/ledger_flutter_plus.dart' as ledger;
 import 'package:trezor_flutter/trezor_flutter.dart' as trezor;
 import 'package:polyseed/polyseed.dart';""";
   const moneroCWHeaders = """
-import 'package:cw_core/hardware/hardware_wallet_service.dart';
 import 'package:cw_core/account.dart' as monero_account;
 import 'package:cw_core/get_height_by_date.dart';
 import 'package:cw_core/monero_amount_format.dart';
@@ -462,6 +463,11 @@ abstract class Monero {
   WalletCredentials createMoneroRestoreWalletFromHardwareCredentials({required String name, required String password, required int height, required HardwareWalletService hardwareWalletService, required String? passphrase});
 WalletCredentials createMoneroNewWalletCredentials({required String name, required String language, required int seedType, required String? passphrase, String? password, String? mnemonic});
   Map<String, String> getKeys(Object wallet);
+  String seedLegacy(Object wallet, String language);
+  Future<int> getNodeHeight(Object wallet);
+  bool isBackgroundSyncRunning(Object wallet);
+  Future<void> startBackgroundSync(Object wallet);
+  Future<void> stopBackgroundSync(Object wallet, String password);
   int? getRestoreHeight(Object wallet);
   Object createMoneroTransactionCreationCredentials({required List<Output> outputs, required TransactionPriority priority});
   Object createMoneroTransactionCreationCredentialsRaw({required List<OutputInfo> outputs, required TransactionPriority priority});
@@ -1711,6 +1717,7 @@ import 'package:cw_core/wallet_info.dart';
 import 'package:cw_core/wallet_service.dart';
 import 'package:cw_core/receive_page_option.dart';
 import 'package:cw_core/wallet_addresses.dart';
+import 'package:cw_core/hardware/hardware_seed_key_protector.dart';
 
 """;
   const zcashCWHeaders = """
@@ -1729,12 +1736,14 @@ abstract class Zcash {
       String? password,
       String? mnemonic,
       required String? passphrase,
+      HardwareSeedKeyProtector? seedKeyProtector,
       int network = 0});
   WalletCredentials createZcashRestoreWalletFromSeedCredentials(
       {required String name,
       required String mnemonic,
       required String password,
       String? passphrase,
+      HardwareSeedKeyProtector? seedKeyProtector,
       required int? height,
       int network = 0});
   WalletCredentials createZcashRestoreWalletFromPrivateKey(
@@ -1778,6 +1787,7 @@ abstract class Zcash {
   Future<void> rescanInternalChange(WalletBase wallet);
   bool ironwoodActive(WalletAddresses walletAddresses);
   Future<bool> hasOrchardMigratableBalance(WalletBase wallet);
+  void setSeedKeyProtector(Object wallet, HardwareSeedKeyProtector protector);
 }
   """;
 

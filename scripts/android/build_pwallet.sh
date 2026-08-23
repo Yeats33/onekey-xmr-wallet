@@ -2,4 +2,4 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$script_dir/build_wallet.sh" onekey-xmr
+exec "$script_dir/build_wallet.sh" pwallet

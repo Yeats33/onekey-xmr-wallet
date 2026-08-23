@@ -8,6 +8,7 @@ class CWZcash extends Zcash {
       String? password,
       String? mnemonic,
       required String? passphrase,
+      HardwareSeedKeyProtector? seedKeyProtector,
       int network = 0}) {
     return ZcashNewWalletCredentials(
       name: name,
@@ -15,6 +16,7 @@ class CWZcash extends Zcash {
       password: password,
       mnemonic: mnemonic,
       network: network,
+      seedKeyProtector: seedKeyProtector,
     );
   }
 
@@ -38,10 +40,17 @@ class CWZcash extends Zcash {
       required String mnemonic,
       required String password,
       String? passphrase,
+      HardwareSeedKeyProtector? seedKeyProtector,
       required int? height,
       int network = 0}) {
     return ZcashFromSeedWalletCredentials(
-        name: name, seed: mnemonic, passphrase: passphrase, password: password, height: height, network: network);
+        name: name,
+        seed: mnemonic,
+        passphrase: passphrase,
+        password: password,
+        height: height,
+        network: network,
+        seedKeyProtector: seedKeyProtector);
   }
 
   @override
@@ -225,6 +234,11 @@ class CWZcash extends Zcash {
   @override
   Future<bool> hasOrchardMigratableBalance(WalletBase wallet) {
     return (wallet as ZcashWallet).hasOrchardMigratableBalance();
+  }
+
+  @override
+  void setSeedKeyProtector(Object wallet, HardwareSeedKeyProtector protector) {
+    (wallet as ZcashWallet).setSeedKeyProtector(protector);
   }
 }
 

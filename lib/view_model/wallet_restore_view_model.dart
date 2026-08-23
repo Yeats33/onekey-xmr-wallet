@@ -16,6 +16,7 @@ import 'package:cake_wallet/utils/feature_flag.dart';
 import 'package:cake_wallet/view_model/restore/restore_mode.dart';
 import 'package:cake_wallet/view_model/restore/restore_wallet.dart';
 import 'package:cake_wallet/view_model/seed_settings_view_model.dart';
+import 'package:cake_wallet/view_model/hardware_wallet/hardware_wallet_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_creation_vm.dart';
 import 'package:cake_wallet/wownero/wownero.dart';
 import 'package:cake_wallet/zano/zano.dart';
@@ -57,8 +58,12 @@ abstract class WalletRestoreViewModelBase extends WalletCreationVM with Store {
       case WalletType.decred:
       case WalletType.bitcoin:
       case WalletType.litecoin:
-      case WalletType.zcash:
         availableModes = [WalletRestoreMode.seed, WalletRestoreMode.keys];
+        break;
+      case WalletType.zcash:
+        availableModes = hardwareWalletType == HardwareWalletType.onekey
+            ? [WalletRestoreMode.seed]
+            : [WalletRestoreMode.seed, WalletRestoreMode.keys];
         break;
       case WalletType.bitcoinCash:
       case WalletType.zano:
@@ -218,14 +223,23 @@ abstract class WalletRestoreViewModelBase extends WalletCreationVM with Store {
             password: password,
           );
         case WalletType.zcash:
-          return zcash!.createZcashRestoreWalletFromSeedCredentials(
+          final protector = hardwareWalletType == HardwareWalletType.onekey
+              ? getIt<HardwareWalletViewModel>(param1: HardwareWalletType.onekey).seedKeyProtector
+              : null;
+          if (hardwareWalletType == HardwareWalletType.onekey && protector == null) {
+            throw StateError('Connect OneKey before creating a protected ZEC wallet');
+          }
+          final credentials = zcash!.createZcashRestoreWalletFromSeedCredentials(
             name: name,
             mnemonic: seed,
             password: password,
             passphrase: passphrase,
             height: height,
             network: zcashNetwork,
+            seedKeyProtector: protector,
           );
+          credentials.hardwareWalletType = hardwareWalletType;
+          return credentials;
         case WalletType.none:
         case WalletType.haven:
           break;

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 APP_LOGO=""
 APP_LOGO_DEST_PATH=`pwd`/../../assets/images/app_logo.png
 ASSETS_DIR=`pwd`/../../assets
@@ -26,6 +26,18 @@ case $APP_ANDROID_TYPE in
 		ANDROID_ICON=$MONERO_COM_PATH
 		ANDROID_ICON_SET=$MONEROCOM_ICON_SET_PATH
 	;;
+	"onekey-zec")
+		# Dedicated ZEC artwork will replace this upstream-derived placeholder.
+		APP_LOGO=$ASSETS_DIR/images/cakewallet_logo.png
+		ANDROID_ICON=$CAKEWALLET_PATH
+		ANDROID_ICON_SET=$CAKEWALLET_ICON_SET_PATH
+	;;
+	"pwallet")
+		# Dedicated PWallet artwork will replace this upstream-derived placeholder.
+		APP_LOGO=$ASSETS_DIR/images/cakewallet_logo.png
+		ANDROID_ICON=$CAKEWALLET_PATH
+		ANDROID_ICON_SET=$CAKEWALLET_ICON_SET_PATH
+	;;
 	"cakewallet")
     	APP_LOGO=$ASSETS_DIR/images/cakewallet_logo.png
     	ANDROID_ICON=$CAKEWALLET_PATH
@@ -48,5 +60,3 @@ if [[ $GITHUB_HUH == "yeah" ]]; then
 	done
 fi
 set +x
-
-

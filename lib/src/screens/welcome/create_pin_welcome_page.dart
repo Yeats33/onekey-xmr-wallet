@@ -8,7 +8,7 @@ import 'package:cake_wallet/routes.dart';
 import 'package:cake_wallet/src/widgets/primary_button.dart';
 import 'package:cake_wallet/src/screens/base_page.dart';
 import 'package:cake_wallet/generated/i18n.dart';
-import 'package:cake_wallet/wallet_type_utils.dart';
+import 'package:cake_wallet/product_flavor.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/animated_typing_text.dart';
 
@@ -25,19 +25,16 @@ class CreatePinWelcomePage extends BasePage {
   final cakeLogoDark = 'assets/images/cake_logo_dark.svg';
 
   String appTitle(BuildContext context) {
-    if (isMoneroOnly) {
-      return 'XMR Wallet';
-    }
-
-    return S.of(context).cake_wallet;
+    return currentProductFlavor.displayName;
   }
 
   String appDescription(BuildContext context) {
-    if (isMoneroOnly) {
-      return 'Private Monero wallet with first-class OneKey and Trezor support';
-    }
-
-    return S.of(context).payment_made_easy;
+    return switch (currentProductFlavor) {
+      ProductFlavor.xmrWallet => 'Private Monero wallet with first-class OneKey and Trezor support',
+      ProductFlavor.zecWallet => 'Zcash wallet for OneKey hardware and protected shielded signing',
+      ProductFlavor.pWallet => 'Privacy wallet for Monero and Zcash',
+      ProductFlavor.moneroCom || ProductFlavor.cakeWallet => S.of(context).payment_made_easy,
+    };
   }
 
   @override
@@ -135,7 +132,7 @@ class CreatePinWelcomePage extends BasePage {
                               textAlign: TextAlign.center,
                             ),
                             SizedBox(width: 8),
-                            if (!isMoneroOnly) ...[
+                            if (currentProductFlavor == ProductFlavor.cakeWallet) ...[
                               SizedBox(width: 8),
                               CakeImageWidget(
                                 height: 40,
@@ -154,7 +151,7 @@ class CreatePinWelcomePage extends BasePage {
                           ],
                         ),
                         SizedBox(height: 48),
-                        if (isMoneroOnly)
+                        if (currentProductFlavor.isPrivacyProduct)
                           Text(
                             appDescription(context),
                             style: Theme.of(context)
@@ -163,7 +160,7 @@ class CreatePinWelcomePage extends BasePage {
                                 ?.copyWith(fontWeight: FontWeight.w500),
                             textAlign: TextAlign.center,
                           ),
-                        if (!isMoneroOnly)
+                        if (!currentProductFlavor.isPrivacyProduct)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,

@@ -7,6 +7,7 @@ import 'package:cake_wallet/new-ui/widgets/copy_wrapper.dart';
 import 'package:cake_wallet/new-ui/widgets/modal_page_wrapper.dart';
 import 'package:cake_wallet/new-ui/widgets/new_primary_button.dart';
 import 'package:cake_wallet/new-ui/widgets/receive_page/receive_top_bar.dart';
+import 'package:cake_wallet/product_flavor.dart';
 import 'package:cake_wallet/routes.dart';
 import 'package:cake_wallet/src/widgets/cake_image_widget.dart';
 import 'package:cake_wallet/src/widgets/new_list_row/new_list_section.dart';
@@ -109,7 +110,7 @@ class _AboutPageState extends State<AboutPage> {
                       spacing: 8,
                       children: [
                         Text(
-                          "Cake Wallet",
+                          currentProductFlavor.displayName,
                           style: TextStyle(fontSize: 32, fontWeight: FontWeight.w500),
                         ),
                         Text(widget.appVersion,

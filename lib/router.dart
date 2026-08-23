@@ -362,9 +362,24 @@ Route<dynamic> createRoute(RouteSettings settings) {
             ConnectDevicePageParams(
               walletType: availableWalletTypes.first,
               hardwareWalletType: hardwareWalletType,
-              onConnectDevice: (BuildContext context, _) => Navigator.of(context).pushNamed(
+              onConnectDevice: (BuildContext context, _) {
+                final walletType = availableWalletTypes.first;
+                if (hardwareWalletType == HardwareWalletType.onekey &&
+                    walletType == WalletType.zcash) {
+                  Navigator.of(context).pushNamed(
+                    Routes.restoreWallet,
+                    arguments: {
+                      'walletType': walletType,
+                      'hardwareWalletType': hardwareWalletType,
+                    },
+                  );
+                  return;
+                }
+                Navigator.of(context).pushNamed(
                   Routes.chooseHardwareWalletAccount,
-                  arguments: [availableWalletTypes.first, hardwareWalletType]),
+                  arguments: [walletType, hardwareWalletType],
+                );
+              },
               isReconnect: false,
             ),
             getIt.get<HardwareWalletViewModel>(param1: hardwareWalletType),
@@ -375,6 +390,22 @@ Route<dynamic> createRoute(RouteSettings settings) {
         (_) => getIt.get<NewWalletTypePage>(
           param1: NewWalletTypeArguments(
             onTypeSelected: (BuildContext context, WalletType type) {
+              if (hardwareWalletType == HardwareWalletType.onekey && type == WalletType.zcash) {
+                final arguments = ConnectDevicePageParams(
+                  walletType: type,
+                  hardwareWalletType: hardwareWalletType,
+                  onConnectDevice: (BuildContext context, _) => Navigator.of(context).pushNamed(
+                    Routes.restoreWallet,
+                    arguments: {
+                      'walletType': type,
+                      'hardwareWalletType': hardwareWalletType,
+                    },
+                  ),
+                  isReconnect: false,
+                );
+                Navigator.of(context).pushNamed(Routes.connectDevices, arguments: arguments);
+                return;
+              }
               if (hardwareWalletType.usesTrezorMoneroProtocol && type != WalletType.monero) {
                 Navigator.of(context).pushNamed(Routes.chooseHardwareWalletAccount,
                     arguments: [type, hardwareWalletType]);

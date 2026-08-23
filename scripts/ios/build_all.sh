@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if [ -z "$APP_IOS_TYPE" ]; then
 	echo "Please set APP_IOS_TYPE"
@@ -11,5 +11,8 @@ $DIR/build_torch.sh
 
 case $APP_IOS_TYPE in
 	"monero.com") $DIR/build_monero_all.sh ;;
+	"onekey-xmr") $DIR/build_monero_all.sh ;;
+	"onekey-zec") ;;
+	"pwallet") $DIR/build_monero_all.sh ;;
 	"cakewallet") $DIR/build_monero_all.sh && $DIR/build_mwebd.sh && $DIR/build_decred.sh ;;
 esac

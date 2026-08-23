@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:cw_core/amount/money.dart';
 import 'package:cw_core/crypto_currency.dart';
 import 'package:cw_core/get_height_by_date_zec.dart';
+import 'package:cw_core/hardware/hardware_seed_key_protector.dart';
 import 'package:cw_core/monero_transaction_priority.dart';
 import 'package:cw_core/node.dart';
 import 'package:cw_core/pathForWallet.dart';
@@ -35,6 +36,7 @@ import 'package:zkool/src/rust/api/sync.dart' as zkool_sync;
 import 'package:zkool/src/rust/api/pay.dart' as zkool_pay;
 import 'package:zkool/src/rust/api/migrate.dart' as zkool_migrate;
 import 'package:zkool/src/rust/api/network.dart' as zkool_network;
+import 'package:zkool/src/rust/api/onekey.dart' as zkool_onekey;
 import 'package:zkool/src/rust/pay.dart' as zkool_paydart;
 import 'package:zkool/src/rust/frb_generated.dart' as zkool_frb;
 
@@ -62,6 +64,42 @@ abstract class ZcashWalletBase
   }
 
   int accountId;
+
+  HardwareSeedKeyProtector? seedKeyProtector;
+
+  static const oneKeyVaultDomain = 'zcash';
+
+  void setSeedKeyProtector(final HardwareSeedKeyProtector protector) {
+    seedKeyProtector = protector;
+  }
+
+  Future<zkool_pay.PcztPackage> signTransaction(
+    final zkool_pay.PcztPackage txPlan,
+    final zkool_coin.Coin coin,
+  ) async {
+    final isProtected = await zkool_onekey.isOnekeyProtectedAccount(c: coin);
+    if (!isProtected) {
+      return zkool_pay.signTransaction(pczt: txPlan, c: coin);
+    }
+    final protector = seedKeyProtector;
+    if (protector == null) {
+      throw StateError('Connect the protecting OneKey before signing this ZEC transaction');
+    }
+    final vaultKey = await protector.unlock(
+      domain: oneKeyVaultDomain,
+      network: coin.coin,
+      accountId: accountId,
+    );
+    try {
+      return await zkool_onekey.signOnekeyProtectedTransaction(
+        pczt: txPlan,
+        vaultKey: vaultKey,
+        c: coin,
+      );
+    } finally {
+      vaultKey.fillRange(0, vaultKey.length, 0);
+    }
+  }
 
   final Map<String, BigInt> _pendingOutgoingAmounts = {};
 
@@ -405,10 +443,11 @@ abstract class ZcashWalletBase
                 unawaited(wallet.updateBalance());
                 unawaited(wallet.updateTransactions());
                 unawaited(
-                  ZcashTaddressRotation.updateCache(mainAccountId: wallet.accountId)
-                      .catchError((final e) {
-                        printV("rotation cache refresh: $e");
-                      }),
+                  ZcashTaddressRotation.updateCache(mainAccountId: wallet.accountId).catchError((
+                    final e,
+                  ) {
+                    printV("rotation cache refresh: $e");
+                  }),
                 );
               }
             });
@@ -530,13 +569,12 @@ abstract class ZcashWalletBase
       return false;
     }
     final orchardSpent = tx.orchardSpent;
-    final spentFromOrchard = orchardSpent > BigInt.zero ||
-        tx.spendPools.contains(NotePool.orchard.index);
+    final spentFromOrchard =
+        orchardSpent > BigInt.zero || tx.spendPools.contains(NotePool.orchard.index);
     if (!spentFromOrchard) {
       return false;
     }
-    if (tx.ironwoodReceived > BigInt.zero ||
-        tx.notePools.contains(NotePool.ironwood.index)) {
+    if (tx.ironwoodReceived > BigInt.zero || tx.notePools.contains(NotePool.ironwood.index)) {
       return true;
     }
     // Orchard → Orchard split step (SD notes created, all outputs are ours).
@@ -612,20 +650,16 @@ abstract class ZcashWalletBase
         : 0;
     final memo = extraMemo != null ? "${tx.memo ?? ''}\n$extraMemo".trim() : tx.memo;
     final isMigration = directionOverride == null && _isIronwoodMigrationTx(tx, ownedAddresses);
-    final direction = directionOverride ??
-        (isMigration ? TransactionDirection.outgoing : tx.direction);
-    final amount = amountOverride ??
-        (isMigration ? _migrationDisplayAmount(tx) : tx.value);
+    final direction =
+        directionOverride ?? (isMigration ? TransactionDirection.outgoing : tx.direction);
+    final amount = amountOverride ?? (isMigration ? _migrationDisplayAmount(tx) : tx.value);
     final recipientAddresses = direction == TransactionDirection.outgoing
         ? _outgoingRecipientAddresses(tx, ownedAddresses: ownedAddresses)
         : const <String>[];
     final info = ZcashTransactionInfo(
       id: tx.txHash,
       amount: Money(amount, currency),
-      fee: Money(
-        direction == TransactionDirection.outgoing ? tx.fee : BigInt.zero,
-        currency,
-      ),
+      fee: Money(direction == TransactionDirection.outgoing ? tx.fee : BigInt.zero, currency),
       direction: direction,
       isPending: tx.height == 0,
       date: tx.time,
@@ -772,8 +806,7 @@ abstract class ZcashWalletBase
       return [];
     }
 
-    final transparent =
-        outputs.where((final o) => o.pool == NotePool.transparent.index).toList();
+    final transparent = outputs.where((final o) => o.pool == NotePool.transparent.index).toList();
     if (transparent.length >= 2) {
       outputs = transparent;
     }
@@ -940,7 +973,9 @@ abstract class ZcashWalletBase
       final s = (await zkool_account.getAccountSeed(account: accountId, c: c));
 
       if (s == null) {
-        throw Exception("seed not found");
+        seed = null;
+        passphrase = null;
+        return;
       }
       final seedPhrase = s.mnemonic.split(" ");
       if ([13, 25].contains(seedPhrase.length)) {
@@ -950,7 +985,9 @@ abstract class ZcashWalletBase
       }
       seed = s.mnemonic.trim();
     } catch (e) {
-      seed = e.toString();
+      printV('Could not load Zcash seed: $e');
+      seed = null;
+      passphrase = null;
     }
   }
 
@@ -1043,8 +1080,7 @@ abstract class ZcashWalletBase
           );
 
           final accounts = await zkool_account.listAccounts(c: coin);
-          final updated =
-              accounts.where((final a) => a.id == accountId).firstOrNull;
+          final updated = accounts.where((final a) => a.id == accountId).firstOrNull;
           if (updated == null) {
             throw Exception('account $accountId not found after update');
           }
@@ -1156,8 +1192,9 @@ abstract class ZcashWalletBase
       await updateBalance();
       await updateTransactions();
       unawaited(
-        ZcashTaddressRotation.updateCache(mainAccountId: accountId)
-            .catchError((final e) => printV("rotation cache refresh: $e")),
+        ZcashTaddressRotation.updateCache(
+          mainAccountId: accountId,
+        ).catchError((final e) => printV("rotation cache refresh: $e")),
       );
       await _initKeys();
     } catch (e) {
@@ -1252,16 +1289,13 @@ abstract class ZcashWalletBase
   }
 
   Future<bool> hasOrchardMigratableBalance() async {
-
     final (active, migratableOrchard) = await runWithCoin(
       accountId: accountId,
-      func: (final coin) async => (
-      await zkool_network.isIronwoodActive(c: coin),
-      await _migratableOrchardTotal(coin),
-      ),
+      func: (final coin) async =>
+          (await zkool_network.isIronwoodActive(c: coin), await _migratableOrchardTotal(coin)),
     );
 
-    if(!active) {
+    if (!active) {
       return false;
     }
 
@@ -1299,7 +1333,7 @@ abstract class ZcashWalletBase
           c: coin,
         );
 
-        final signTx = await zkool_pay.signTransaction(pczt: txPlan, c: coin);
+        final signTx = await signTransaction(txPlan, coin);
         final txBytes = await zkool_pay.extractTransaction(package: signTx);
         final currentHeight = await zkool_network.getCurrentHeight(c: coin);
         return await zkool_pay.broadcastTransaction(
@@ -1413,10 +1447,11 @@ abstract class ZcashWalletBase
   }) async {
     try {
       await _updateIronwoodActive();
-      if (runAutoShield) {
+      final canSignUnattended = walletInfo.hardwareWalletType == null;
+      if (runAutoShield && canSignUnattended) {
         await _autoShield();
       }
-      if (runIronwoodMigrate) {
+      if (runIronwoodMigrate && canSignUnattended) {
         await _ironwoodMigrate();
       }
 
@@ -1494,18 +1529,30 @@ abstract class ZcashWalletBase
 
     final birthHeight = await birthHeightForNetwork(network);
 
-    final accountId = await restoreZcashWalletFromSeed(
-      name: credentials.name,
-      seed: mnemonic,
-      passphrase: newWalletCredentials.passphrase,
-      birthHeight: birthHeight,
-    );
+    late final int accountId;
+    try {
+      accountId = await restoreZcashWalletFromSeed(
+        name: credentials.name,
+        seed: mnemonic,
+        passphrase: newWalletCredentials.passphrase,
+        birthHeight: birthHeight,
+        seedKeyProtector: newWalletCredentials.seedKeyProtector,
+        network: network,
+      );
+    } finally {
+      if (newWalletCredentials.seedKeyProtector != null) {
+        newWalletCredentials.mnemonic = null;
+      }
+    }
     await saveAccountId(credentials.name, accountId);
     final wallet = await open(
       name: credentials.name,
       password: credentials.password!,
       walletInfo: credentials.walletInfo!,
     );
+    if (newWalletCredentials.seedKeyProtector case final protector?) {
+      wallet.setSeedKeyProtector(protector);
+    }
     await wallet.init();
     return wallet;
   }
@@ -1520,18 +1567,30 @@ abstract class ZcashWalletBase
       throw Exception('Seed phrase is required for wallet restoration');
     }
 
-    final accountId = await restoreZcashWalletFromSeed(
-      name: credentials.name,
-      seed: seed,
-      passphrase: fromSeedCredentials.passphrase,
-      birthHeight: credentials.height!,
-    );
+    late final int accountId;
+    try {
+      accountId = await restoreZcashWalletFromSeed(
+        name: credentials.name,
+        seed: seed,
+        passphrase: fromSeedCredentials.passphrase,
+        birthHeight: credentials.height!,
+        seedKeyProtector: fromSeedCredentials.seedKeyProtector,
+        network: network,
+      );
+    } finally {
+      if (fromSeedCredentials.seedKeyProtector != null) {
+        fromSeedCredentials.seed = null;
+      }
+    }
     await saveAccountId(credentials.name, accountId);
     final wallet = await open(
       name: credentials.name,
       password: credentials.password!,
       walletInfo: credentials.walletInfo!,
     );
+    if (fromSeedCredentials.seedKeyProtector case final protector?) {
+      wallet.setSeedKeyProtector(protector);
+    }
     await wallet.init();
     return wallet;
   }
@@ -1597,19 +1656,43 @@ abstract class ZcashWalletBase
     required final String seed,
     required final String? passphrase,
     required final int birthHeight,
+    final HardwareSeedKeyProtector? seedKeyProtector,
+    final ZcashNetwork network = ZcashNetwork.mainnet,
   }) async {
     // if (passphrase?.isNotEmpty == true) {
     //   passphrase = passphrase!.replaceAll(" ", "_");
     //   seed = "${seed} ${passphrase}";
     // }
 
-    final accountId = await newAccount(
-      name: name,
-      height: birthHeight,
-      seed: seed,
-      passphrase: passphrase ?? '',
-    );
-    return accountId;
+    if (seedKeyProtector == null) {
+      return newAccount(name: name, height: birthHeight, seed: seed, passphrase: passphrase ?? '');
+    }
+
+    final vaultKey = zkool_onekey.generateOnekeyVaultKey();
+    int? accountId;
+    try {
+      accountId = await newOneKeyProtectedAccount(
+        name: name,
+        height: birthHeight,
+        seed: seed,
+        passphrase: passphrase ?? '',
+        vaultKey: vaultKey,
+      );
+      await seedKeyProtector.protect(
+        domain: oneKeyVaultDomain,
+        network: network.networkIndex,
+        accountId: accountId,
+        key: vaultKey,
+      );
+      return accountId;
+    } catch (_) {
+      if (accountId != null) {
+        await zkool_account.deleteAccount(account: accountId, c: c).catchError((_) {});
+      }
+      rethrow;
+    } finally {
+      vaultKey.fillRange(0, vaultKey.length, 0);
+    }
   }
 
   static Future<int?> getLegacyZcashAccountIdForName(final String name) async {
@@ -1767,6 +1850,29 @@ abstract class ZcashWalletBase
     );
     return id;
   }
+
+  static Future<int> newOneKeyProtectedAccount({
+    required final String name,
+    required final int height,
+    required final String seed,
+    required final String passphrase,
+    required final List<int> vaultKey,
+  }) => zkool_onekey.createOnekeyProtectedAccount(
+    na: zkool_account.NewAccount(
+      name: name,
+      restore: true,
+      passphrase: passphrase,
+      key: seed,
+      aindex: 0,
+      birth: height,
+      folder: '',
+      useInternal: true,
+      internal: false,
+      ledger: false,
+    ),
+    vaultKey: vaultKey,
+    c: c,
+  );
 
   static final runWithCoinMutex = Mutex();
   static int runWithCoinCount = 0;

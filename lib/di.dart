@@ -50,6 +50,7 @@ import 'package:cake_wallet/exchange/provider/trocador_exchange_provider.dart';
 import 'package:cake_wallet/exchange/trade.dart';
 import 'package:cake_wallet/haven/cw_haven.dart';
 import 'package:cake_wallet/monero/monero.dart';
+import 'package:cake_wallet/product_flavor.dart';
 import 'package:cake_wallet/nano/nano.dart';
 import 'package:cake_wallet/new-ui/new_dashboard.dart';
 import 'package:cake_wallet/new-ui/pages/about_page.dart';
@@ -284,6 +285,7 @@ import 'package:cake_wallet/view_model/wallet_address_list/wallet_address_list_i
 import 'package:cake_wallet/view_model/wallet_address_list/wallet_address_list_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_groups_display_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_hardware_restore_view_model.dart';
+import 'package:cake_wallet/wallet_type_utils.dart';
 import 'package:cake_wallet/view_model/wallet_keys_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_list/wallet_edit_view_model.dart';
 import 'package:cake_wallet/view_model/wallet_list/wallet_list_view_model.dart';
@@ -432,7 +434,10 @@ Future<void> setup({
   getIt.registerLazySingleton(BitboxViewModel.new);
 
   getIt.registerLazySingleton(
-    () => TrezorConnect("xmrwallet://trezor_connect", appName: "XMR Wallet"),
+    () => TrezorConnect(
+      "${currentProductFlavor.urlScheme}://trezor_connect",
+      appName: approximatedAppName,
+    ),
   );
 
   getIt.registerLazySingleton<TrezorConnectViewModel>(

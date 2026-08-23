@@ -15,7 +15,7 @@ void main() {
     expect(HardwareWalletType.ledger.usesTrezorMoneroProtocol, isFalse);
   });
 
-  test("OneKey native support includes Android BLE and USB", () {
+  test("OneKey native support includes Android USB/BLE and iOS BLE", () {
     expect(
       DeviceConnectionType.supportedConnectionTypes(
         WalletType.monero,
@@ -29,7 +29,22 @@ void main() {
         HardwareWalletType.onekey,
         true,
       ),
-      isEmpty,
+      [DeviceConnectionType.ble],
+    );
+    expect(
+      DeviceConnectionType.supportedConnectionTypes(
+        WalletType.zcash,
+        HardwareWalletType.onekey,
+      ),
+      [DeviceConnectionType.ble, DeviceConnectionType.usb],
+    );
+    expect(
+      DeviceConnectionType.supportedConnectionTypes(
+        WalletType.zcash,
+        HardwareWalletType.onekey,
+        true,
+      ),
+      [DeviceConnectionType.ble],
     );
   });
 }

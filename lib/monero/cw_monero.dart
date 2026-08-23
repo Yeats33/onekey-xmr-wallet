@@ -295,6 +295,25 @@ class CWMonero extends Monero {
   }
 
   @override
+  String seedLegacy(Object wallet, String language) =>
+      (wallet as MoneroWallet).seedLegacy(language);
+
+  @override
+  Future<int> getNodeHeight(Object wallet) => (wallet as MoneroWallet).getNodeHeight();
+
+  @override
+  bool isBackgroundSyncRunning(Object wallet) =>
+      (wallet as MoneroWallet).isBackgroundSyncRunning;
+
+  @override
+  Future<void> startBackgroundSync(Object wallet) =>
+      (wallet as MoneroWallet).startBackgroundSync();
+
+  @override
+  Future<void> stopBackgroundSync(Object wallet, String password) =>
+      (wallet as MoneroWallet).stopBackgroundSync(password);
+
+  @override
   int? getRestoreHeight(Object wallet) {
     final moneroWallet = wallet as MoneroWallet;
     return moneroWallet.restoreHeight;

@@ -1,4 +1,5 @@
 import 'package:cw_core/wallet_credentials.dart';
+import 'package:cw_core/hardware/hardware_seed_key_protector.dart';
 
 class ZcashNewWalletCredentials extends WalletCredentials {
   ZcashNewWalletCredentials({
@@ -8,6 +9,7 @@ class ZcashNewWalletCredentials extends WalletCredentials {
     final String? mnemonic,
     final int? seedPhraseLength,
     this.network = 0,
+    this.seedKeyProtector,
   }) : super(
          name: name,
          password: password,
@@ -19,6 +21,7 @@ class ZcashNewWalletCredentials extends WalletCredentials {
 
   String? mnemonic;
   int network;
+  final HardwareSeedKeyProtector? seedKeyProtector;
 }
 
 class ZcashFromSeedWalletCredentials extends WalletCredentials {
@@ -29,9 +32,11 @@ class ZcashFromSeedWalletCredentials extends WalletCredentials {
     required this.seed,
     required super.height,
     this.network = 0,
+    this.seedKeyProtector,
   }) : super(name: name, password: password, passphrase: passphrase);
-  final String? seed;
+  String? seed;
   int network;
+  final HardwareSeedKeyProtector? seedKeyProtector;
 }
 
 class ZcashFromKeysWalletCredentials extends WalletCredentials {

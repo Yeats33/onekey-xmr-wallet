@@ -507,6 +507,40 @@ class _WalletRestorePageBodyState extends State<_WalletRestorePageBody>
             ),
           ),
           const SizedBox(height: 12),
+          if (walletRestoreViewModel.type == WalletType.zcash &&
+              walletRestoreViewModel.hardwareWalletType == HardwareWalletType.onekey)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.enhanced_encryption_outlined,
+                        color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "OneKey-protected ZEC: the database stores viewing keys and an "
+                          "encrypted seed only. Shielded signing still happens on this phone; "
+                          "OneKey unlocks it and cannot verify the shielded recipient.",
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: TabBarView(
               controller: _tabController,

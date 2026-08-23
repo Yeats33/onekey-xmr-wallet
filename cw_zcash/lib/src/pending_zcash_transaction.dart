@@ -49,7 +49,7 @@ class PendingZcashTransaction with PendingTransaction {
     await ZcashWalletBase.runWithCoin(
       accountId: zcashWallet.accountId,
       func: (coin) async {
-        final signTx = await zkool_pay.signTransaction(pczt: txPlan, c: coin);
+        final signTx = await zcashWallet.signTransaction(txPlan, coin);
         final txBytes = await zkool_pay.extractTransaction(package: signTx);
         final currentHeight = await zkool_network.getCurrentHeight(c: coin);
         final result = await zkool_pay.broadcastTransaction(

@@ -3,6 +3,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/functions.sh"
 set -x -e
 MONERO_COM="monero.com"
 CAKEWALLET="cakewallet"
+ONEKEY_XMR="onekey-xmr"
+ONEKEY_ZEC="onekey-zec"
+PWALLET="pwallet"
 DIR=`pwd`
 
 if [ -z "$APP_IOS_TYPE" ]; then
@@ -17,10 +20,11 @@ cp -rf ./ios/Runner/InfoBase.plist ./ios/Runner/Info.plist
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${APP_IOS_BUNDLE_ID}" ./ios/Runner/Info.plist
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_IOS_VERSION}" ./ios/Runner/Info.plist
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_IOS_BUILD_NUMBER}" ./ios/Runner/Info.plist
+/usr/libexec/PlistBuddy -c "Set :BGTaskSchedulerPermittedIdentifiers:0 ${APP_IOS_BUNDLE_ID}.monero_sync_task" ./ios/Runner/Info.plist
 
-/usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string ${APP_IOS_TYPE}" ./ios/Runner/Info.plist
+/usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLName string ${APP_IOS_SCHEME:-$APP_IOS_TYPE}" ./ios/Runner/Info.plist
 /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" ./ios/Runner/Info.plist
-/usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes: string ${APP_IOS_TYPE}" ./ios/Runner/Info.plist
+/usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes: string ${APP_IOS_SCHEME:-$APP_IOS_TYPE}" ./ios/Runner/Info.plist
 universal_sed "s/PRODUCT_BUNDLE_IDENTIFIER = .*;/PRODUCT_BUNDLE_IDENTIFIER = $APP_IOS_BUNDLE_ID;/g" ./ios/Runner.xcodeproj/project.pbxproj
 
 CONFIG_ARGS=""
@@ -28,6 +32,15 @@ CONFIG_ARGS=""
 case $APP_IOS_TYPE in
     $MONERO_COM)
 		CONFIG_ARGS="--monero"
+		;;
+	$ONEKEY_XMR)
+		CONFIG_ARGS="--monero"
+		;;
+	$ONEKEY_ZEC)
+		CONFIG_ARGS="--zcash"
+		;;
+	$PWALLET)
+		CONFIG_ARGS="--monero --zcash"
 		;;
 
         $CAKEWALLET)

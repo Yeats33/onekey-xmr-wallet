@@ -1,9 +1,9 @@
-name: XMR Wallet Android
+name: Privacy Wallets Android
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ["xmr-v*", "zec-v*", "pwallet-v*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -17,14 +17,46 @@ env:
   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
 concurrency:
-  group: xmr-wallet-android-${{ github.ref }}
+  group: privacy-wallets-android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Test and build Android
+  prepare:
+    name: Select products
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    outputs:
+      matrix: ${{ steps.products.outputs.matrix }}
+    steps:
+      - name: Build product matrix
+        id: products
+        env:
+          BUILD_REF: ${{ github.ref }}
+        run: |
+          all_products='{"include":[{"app_type":"onekey-xmr","artifact":"xmr-wallet","package_id":"com.yeats33.xmrwallet","display_name":"XMR Wallet","tag_prefix":"xmr-v"},{"app_type":"onekey-zec","artifact":"zec-wallet","package_id":"com.yeats33.zecwallet","display_name":"ZEC Wallet","tag_prefix":"zec-v"},{"app_type":"pwallet","artifact":"pwallet","package_id":"com.yeats33.pwallet","display_name":"PWallet","tag_prefix":"pwallet-v"}]}'
+          case "$BUILD_REF" in
+            refs/tags/xmr-v*)
+              matrix='{"include":[{"app_type":"onekey-xmr","artifact":"xmr-wallet","package_id":"com.yeats33.xmrwallet","display_name":"XMR Wallet","tag_prefix":"xmr-v"}]}'
+              ;;
+            refs/tags/zec-v*)
+              matrix='{"include":[{"app_type":"onekey-zec","artifact":"zec-wallet","package_id":"com.yeats33.zecwallet","display_name":"ZEC Wallet","tag_prefix":"zec-v"}]}'
+              ;;
+            refs/tags/pwallet-v*)
+              matrix='{"include":[{"app_type":"pwallet","artifact":"pwallet","package_id":"com.yeats33.pwallet","display_name":"PWallet","tag_prefix":"pwallet-v"}]}'
+              ;;
+            *)
+              matrix="$all_products"
+              ;;
+          esac
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.display_name }} Android
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
 
     steps:
       - name: Check out source
@@ -63,31 +95,39 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y build-essential file unzip
 
       - name: Restore pinned native dependencies
-        run: ./scripts/android/restore_ci_dependencies.sh
+        run: ./scripts/android/restore_ci_dependencies.sh "${{ matrix.app_type }}"
 
-      - name: Configure XMR-only application
-        run: ./configure_onekey_xmr.sh
+      - name: Configure product
+        run: ./configure_wallet.sh "${{ matrix.app_type }}"
 
-      - name: Verify tag matches application version
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Verify tag matches product version
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           pushd scripts/android >/dev/null
-          source ./app_env.sh onekey-xmr
+          source ./app_env.sh "${{ matrix.app_type }}"
           popd >/dev/null
-          test "${GITHUB_REF_NAME}" = "v${APP_ANDROID_VERSION}"
+          test "$GITHUB_REF_NAME" = "${APP_ANDROID_TAG_PREFIX}${APP_ANDROID_VERSION}"
 
       - name: Run wallet tests
         run: |
           flutter test \
+            --dart-define="PRODUCT_FLAVOR=${{ matrix.app_type }}" \
+            test/product_flavor_test.dart \
+            test/wallet_type_matrix_test.dart \
             test/donation_config_test.dart \
-            test/onekey_native_usb_test.dart \
-            test/onekey_native_ble_test.dart
+            test/onekey_cipher_key_value_test.dart \
+            test/onekey_zcash_seed_key_protector_test.dart
+          if [[ "${{ matrix.app_type }}" != "onekey-zec" ]]; then
+            flutter test \
+              test/onekey_native_usb_test.dart \
+              test/onekey_native_ble_test.dart
+          fi
           pushd cw_core >/dev/null
           flutter test test/hardware_wallet_type_test.dart
           popd >/dev/null
 
       - name: Configure release signing
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
@@ -106,35 +146,38 @@ jobs:
             "keyPassword=$KEY_PASSWORD"
 
       - name: Configure CI signing
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         run: |
+          alias="${{ matrix.artifact }}-ci"
           keytool -genkeypair -noprompt \
             -keystore android/app/key.jks \
-            -storepass xmr-wallet-ci \
-            -keypass xmr-wallet-ci \
-            -alias xmr-wallet-ci \
+            -storepass privacy-wallet-ci \
+            -keypass privacy-wallet-ci \
+            -alias "$alias" \
             -keyalg RSA \
             -keysize 2048 \
             -validity 30 \
-            -dname "CN=XMR Wallet CI,O=Yeats33,C=DE"
+            -dname "CN=${{ matrix.display_name }} CI,O=Yeats33,C=DE"
           dart run tool/generate_android_key_properties.dart \
-            keyAlias=xmr-wallet-ci \
+            "keyAlias=$alias" \
             storeFile=key.jks \
-            storePassword=xmr-wallet-ci \
-            keyPassword=xmr-wallet-ci
+            storePassword=privacy-wallet-ci \
+            keyPassword=privacy-wallet-ci
 
       - name: Build signed APKs
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
-        run: ./scripts/android/build_onekey_xmr.sh
+        run: ./scripts/android/build_wallet.sh "${{ matrix.app_type }}"
 
       - name: Verify APKs
         run: |
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           export PATH="$build_tools:$PATH"
-          version="$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)"
-          output_dir="dist/android/v$version"
+          pushd scripts/android >/dev/null
+          source ./app_env.sh "${{ matrix.app_type }}"
+          popd >/dev/null
+          output_dir="dist/android/${APP_ANDROID_ARTIFACT}/v${APP_ANDROID_VERSION}"
           pushd "$output_dir" >/dev/null
           sha256sum -c SHA256SUMS
           popd >/dev/null
@@ -142,21 +185,23 @@ jobs:
             apksigner verify "$apk"
             zipalign -c -P 16 4 "$apk"
           done
-          aapt dump badging "$output_dir/xmr-wallet-$version-arm64-v8a.apk" | \
-            grep "package: name='com.yeats33.xmrwallet'"
+          aapt dump badging "$output_dir/${APP_ANDROID_ARTIFACT}-${APP_ANDROID_VERSION}-arm64-v8a.apk" | \
+            grep "package: name='${APP_ANDROID_PACKAGE}'"
 
       - name: Upload CI artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: xmr-wallet-android-${{ github.sha }}
-          path: dist/android/v*/
+          name: ${{ matrix.artifact }}-android-${{ github.sha }}
+          path: dist/android/${{ matrix.artifact }}/v*/
           if-no-files-found: error
           retention-days: 14
 
   release:
-    name: Publish GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    name: Publish ${{ matrix.display_name }} release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [prepare, build]
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -165,7 +210,7 @@ jobs:
       - name: Download signed APKs
         uses: actions/download-artifact@v8
         with:
-          name: xmr-wallet-android-${{ github.sha }}
+          name: ${{ matrix.artifact }}-android-${{ github.sha }}
           path: release-artifacts
 
       - name: Publish GitHub release
