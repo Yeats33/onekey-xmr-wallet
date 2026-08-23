@@ -25,7 +25,7 @@ The Monero wire-message schema remains shared with the implementation in OneKey 
 - Application name: `XMR Wallet`
 - Application ID: `com.yeats33.xmrwallet`
 - Deep-link scheme: `xmrwallet`
-- Current version: `1.2.0`
+- Current version: `1.2.1`
 
 It can be installed alongside Cake Wallet and Monero.com because it uses a separate Android application ID.
 
@@ -40,7 +40,7 @@ Cake's shared Android plugins and native libraries must be prepared first. See [
 
 Build outputs are written to `dist/android/` and deliberately excluded from Git history.
 
-The `XMR Wallet Android` workflow runs the OneKey USB/BLE tests and builds signed APK artifacts on every push and pull request. Tags matching the configured application version, such as `v1.2.0`, publish the production-signed APKs and `SHA256SUMS` as a GitHub Release.
+The `XMR Wallet Android` workflow runs the OneKey USB/BLE tests and builds signed APK artifacts on every push and pull request. Tags matching the configured application version, such as `v1.2.1`, publish the production-signed APKs and `SHA256SUMS` as a GitHub Release.
 
 Production APK signing certificate SHA-256:
 
@@ -55,11 +55,22 @@ The repository includes tests for:
 - stable OneKey hardware-wallet persistence;
 - rejection of the Trezor-compatibility USB PID by the native OneKey transport;
 - native OneKey BLE UUIDs and V1 64-byte packet framing;
-- Android OneKey USB/BLE connection availability.
+- Android OneKey USB/BLE connection availability;
+- the XMR donation address and `monero:` payment URI.
 
 Before using significant funds, test wallet restoration, receiving, sending, and key-image synchronization over both USB and BLE with a small amount of XMR.
 
 Never enter a OneKey recovery phrase into this or any other software wallet.
+
+## Donate
+
+To support continued XMR Wallet development, donations can be sent to this Monero address:
+
+```text
+89stMPmzZBFLumXZnBBrux92HtCiJwhnUXFg1RrKBfkfKGVbEnZdWAtPu7E6ZN8ZCrCuu6Qx1rypa1CqkY3UYmhAQWSL4bC
+```
+
+The same address is available from **Settings → About → Donate XMR** in the Android app.
 
 ## Upstream and license
 

@@ -76,9 +76,12 @@ jobs:
           popd >/dev/null
           test "${GITHUB_REF_NAME}" = "v${APP_ANDROID_VERSION}"
 
-      - name: Run OneKey transport tests
+      - name: Run wallet tests
         run: |
-          flutter test test/onekey_native_usb_test.dart test/onekey_native_ble_test.dart
+          flutter test \
+            test/donation_config_test.dart \
+            test/onekey_native_usb_test.dart \
+            test/onekey_native_ble_test.dart
           pushd cw_core >/dev/null
           flutter test test/hardware_wallet_type_test.dart
           popd >/dev/null
