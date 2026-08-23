@@ -10,9 +10,9 @@ DIR=$(dirname "$0")
 $DIR/build_torch.sh
 
 case $APP_IOS_TYPE in
-	"monero.com") $DIR/build_monero_all.sh ;;
-	"onekey-xmr") $DIR/build_monero_all.sh ;;
-	"onekey-zec") $DIR/build_monero_all.sh ;;
-	"pwallet") $DIR/build_monero_all.sh ;;
-	"cakewallet") $DIR/build_monero_all.sh && $DIR/build_mwebd.sh && $DIR/build_decred.sh ;;
+	"monero.com") $DIR/restore_monero_prebuilt.sh ;;
+	"onekey-xmr") $DIR/restore_monero_prebuilt.sh ;;
+	"onekey-zec") $DIR/restore_monero_prebuilt.sh ;;
+	"pwallet") $DIR/restore_monero_prebuilt.sh ;;
+	"cakewallet") $DIR/restore_monero_prebuilt.sh && $DIR/build_mwebd.sh && $DIR/build_decred.sh ;;
 esac
