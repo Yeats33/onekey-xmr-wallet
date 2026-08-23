@@ -57,7 +57,7 @@ jobs:
             "ndk;28.2.13676358"
 
       - name: Set up Gradle cache
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install host tools
         run: sudo apt-get update && sudo apt-get install -y build-essential file unzip
@@ -132,7 +132,9 @@ jobs:
           export PATH="$build_tools:$PATH"
           version="$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)"
           output_dir="dist/android/v$version"
-          sha256sum -c "$output_dir/SHA256SUMS"
+          pushd "$output_dir" >/dev/null
+          sha256sum -c SHA256SUMS
+          popd >/dev/null
           for apk in "$output_dir"/*.apk; do
             apksigner verify "$apk"
             zipalign -c -P 16 4 "$apk"
@@ -141,7 +143,7 @@ jobs:
             grep "package: name='com.yeats33.xmrwallet'"
 
       - name: Upload CI artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: xmr-wallet-android-${{ github.sha }}
           path: dist/android/v*/
@@ -158,13 +160,13 @@ jobs:
 
     steps:
       - name: Download signed APKs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: xmr-wallet-android-${{ github.sha }}
           path: release-artifacts
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           files: |

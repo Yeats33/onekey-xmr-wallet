@@ -56,5 +56,7 @@ cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
   "$output_dir/xmr-wallet-$version-armeabi-v7a.apk"
 cp build/app/outputs/flutter-apk/app-x86_64-release.apk \
   "$output_dir/xmr-wallet-$version-x86_64.apk"
-sha256sum "$output_dir"/*.apk | tee "$output_dir/SHA256SUMS"
+pushd "$output_dir" >/dev/null
+sha256sum ./*.apk | tee SHA256SUMS
+popd >/dev/null
 popd >/dev/null
