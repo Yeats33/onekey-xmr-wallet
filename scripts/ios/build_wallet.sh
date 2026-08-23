@@ -47,13 +47,22 @@ for package_dir in "${package_dirs[@]}"; do
 done
 dart run build_runner build
 
-build_args=(
-  ipa
-  --release
-  --dart-define="PRODUCT_FLAVOR=$app_type"
-)
 if [[ "${IOS_NO_CODESIGN:-0}" == "1" ]]; then
-  build_args+=(--no-codesign)
+  # `flutter build ipa --no-codesign` creates the archive and then exits 1
+  # because it intentionally cannot export an IPA. Build the unsigned app
+  # bundle directly and package Payload/Runner.app below instead.
+  build_args=(
+    ios
+    --release
+    --no-codesign
+    --dart-define="PRODUCT_FLAVOR=$app_type"
+  )
+else
+  build_args=(
+    ipa
+    --release
+    --dart-define="PRODUCT_FLAVOR=$app_type"
+  )
 fi
 flutter build "${build_args[@]}"
 
