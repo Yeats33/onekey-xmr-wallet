@@ -39,6 +39,7 @@ jobs:
             scripts/android/build_onekey_zec.sh \
             scripts/android/build_pwallet.sh \
             scripts/ios/build_wallet.sh \
+            scripts/ios/restore_ci_dependencies.sh \
             scripts/ios/build_onekey_xmr.sh \
             scripts/ios/build_onekey_zec.sh \
             scripts/ios/build_pwallet.sh
