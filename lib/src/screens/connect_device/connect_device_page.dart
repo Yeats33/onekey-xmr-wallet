@@ -151,13 +151,33 @@ class ConnectDevicePageBodyState extends State<ConnectDevicePageBody> {
     try {
       final dev = await widget.hardwareWalletVM.getAllUsbDevices();
 
-      if (usbDevices.length != dev.length) {
+      if (!_sameDeviceSnapshot(usbDevices, dev)) {
         setState(() => usbDevices = dev);
       }
     } catch (e) {
       printV(e);
     }
     _isRefreshingUsb = false;
+  }
+
+  bool _sameDeviceSnapshot(
+    List<HardwareWalletDevice> previous,
+    List<HardwareWalletDevice> current,
+  ) {
+    if (previous.length != current.length) return false;
+
+    for (var index = 0; index < previous.length; index++) {
+      if (_deviceIdentity(previous[index]) != _deviceIdentity(current[index])) return false;
+    }
+    return true;
+  }
+
+  String _deviceIdentity(HardwareWalletDevice device) {
+    if (device is TrezorCompatibleHardwareWalletDevice) {
+      return "${device.runtimeType}:${device.device.id}";
+    }
+
+    return "${device.runtimeType}:${device.name}:${device.type.name}:${device.connectionType.name}";
   }
 
   Future<void> _refreshBleDevices() async {

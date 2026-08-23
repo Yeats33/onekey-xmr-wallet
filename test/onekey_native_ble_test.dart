@@ -10,6 +10,17 @@ void main() {
     expect(oneKeyBleNotifyUuid, "00000003-0000-1000-8000-00805f9b34fb");
   });
 
+  test("OneKey BLE recognizes bonded Android advertisements without service data", () {
+    expect(isOneKeyBleAdvertisement(const [], name: "OneKey Pro"), isTrue);
+    expect(isOneKeyBleAdvertisement(const [], name: "Unknown wallet"), isFalse);
+  });
+
+  test("OneKey BLE recognizes full and shortened native service UUIDs", () {
+    expect(isOneKeyBleAdvertisement([oneKeyBleServiceUuid]), isTrue);
+    expect(isOneKeyBleAdvertisement(const ["0001"]), isTrue);
+    expect(isOneKeyBleAdvertisement(const ["00000001"]), isTrue);
+  });
+
   test("OneKey BLE V1 packer emits 64-byte transport reports", () {
     final message = Uint8List.fromList(List<int>.generate(150, (index) => index & 0xff));
     message[0] = 0x3f;

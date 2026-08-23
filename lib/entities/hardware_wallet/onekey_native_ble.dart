@@ -85,7 +85,10 @@ class OneKeyNativeBleManager extends ConnectionManager {
     final scannedIds = <String>{};
 
     UniversalBle.onScanResult = (result) {
-      if (!_isOneKeyAdvertisement(result.services) || scannedIds.contains(result.deviceId)) return;
+      if (!isOneKeyBleAdvertisement(result.services, name: result.name) ||
+          scannedIds.contains(result.deviceId)) {
+        return;
+      }
 
       final device = TrezorDevice.ble(
         id: result.deviceId,
@@ -217,11 +220,26 @@ class OneKeyNativeBleManager extends ConnectionManager {
   void _ensureActive() {
     if (_disposed) throw TrezorManagerDisposedException(ConnectionType.ble);
   }
+}
 
-  static bool _isOneKeyAdvertisement(List<String> services) {
-    final expected = _normalizeUuid(oneKeyBleServiceUuid);
-    return services.map(_normalizeUuid).contains(expected);
-  }
+/// Identifies a native OneKey BLE advertisement.
+///
+/// Android can return an empty service list even when the platform scan filter
+/// matched the OneKey service, especially for an already bonded device.  In
+/// that case the advertised name is used only to keep the device in the
+/// candidate list; [OneKeyV1GattGateway.start] still validates the native
+/// service and both required characteristics before any protocol traffic.
+bool isOneKeyBleAdvertisement(List<String> services, {String? name}) {
+  final normalizedServices = services.map(_normalizeUuid);
+  final hasNativeService = normalizedServices.any(
+    (service) =>
+        service == _normalizeUuid(oneKeyBleServiceUuid) ||
+        service == "0001" ||
+        service == "00000001",
+  );
+  if (hasNativeService) return true;
+
+  return (name ?? "").trim().toLowerCase().contains("onekey");
 }
 
 class OneKeyV1GattGateway {

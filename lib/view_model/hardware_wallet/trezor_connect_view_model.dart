@@ -132,7 +132,11 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
   }
 
   @override
-  Stream<HardwareWalletDevice> scanForBleDevices() => bleInterface.scan().map(_wrapDevice);
+  Stream<HardwareWalletDevice> scanForBleDevices() async* {
+    await _initBLE();
+    if (!_bleIsInitialized) return;
+    yield* bleInterface.scan().map(_wrapDevice);
+  }
 
   @override
   Future<List<HardwareWalletDevice>> getAllUsbDevices() =>
@@ -179,6 +183,10 @@ abstract class TrezorConnectViewModelBase extends HardwareWalletViewModel with S
     paringState = TrezorParingState.initial;
 
     try {
+      final previousClient = _client;
+      _client = null;
+      await previousClient?.connection.disconnect().catchError((_) {});
+
       final connection = device.connectionType == HardwareWalletConnectionType.ble
           ? await bleInterface.connect(device.device)
           : await usbInterface.connect(device.device);

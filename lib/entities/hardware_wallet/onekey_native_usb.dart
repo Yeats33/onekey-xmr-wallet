@@ -119,6 +119,10 @@ class OneKeyNativeUsbManager extends ConnectionManager {
 
     try {
       final usbDevices = await _usbTransport.listDevices();
+      final attachedIds =
+          usbDevices.where(_isNativeOneKeyPro).map((device) => device.identifier).toSet();
+      _devices.removeWhere((deviceId, _) => !attachedIds.contains(deviceId));
+
       for (final usbDevice in usbDevices.where(_isNativeOneKeyPro)) {
         final candidate = TrezorDevice.usb(usbDevice);
         if (_devices.containsKey(candidate.id)) continue;

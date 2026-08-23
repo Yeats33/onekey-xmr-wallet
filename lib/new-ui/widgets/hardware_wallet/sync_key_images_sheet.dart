@@ -12,7 +12,6 @@ import "package:cake_wallet/utils/show_pop_up.dart";
 import "package:cake_wallet/view_model/hardware_wallet/trezor_connect_view_model.dart";
 import "package:cw_core/wallet_base.dart";
 import "package:cw_core/wallet_info.dart";
-import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 
 class SyncKeyImagesSheet extends StatefulWidget {
@@ -56,6 +55,7 @@ class _HardwareWalletProceedOnDeviceSheetState extends State<SyncKeyImagesSheet>
                         Icons.close,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                      leadingSemanticLabel: S.of(context).close,
                       onLeadingPressed: () => showPopUp(
                         context: context,
                         builder: (context) => AlertWithTwoActions(
@@ -162,30 +162,30 @@ class _HardwareWalletProceedOnDeviceSheetState extends State<SyncKeyImagesSheet>
       );
 
   Widget _syncingKeyImages() => Column(
-    key: const ValueKey(1),
-    spacing: 12,
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text(
-        S.of(context).proceed_on_device,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 20,
-        ),
-      ),
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Text(
-          S.of(context).proceed_on_device_description,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        key: const ValueKey(1),
+        spacing: 12,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            S.of(context).proceed_on_device,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 20,
+            ),
           ),
-        ),
-      )
-    ],
-  );
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              S.of(context).proceed_on_device_description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        ],
+      );
 
   Future<void> _onContinuePressed() async {
     setState(() => _state = _KeyImageSyncState.syncing);
@@ -197,25 +197,32 @@ class _HardwareWalletProceedOnDeviceSheetState extends State<SyncKeyImagesSheet>
           walletType: widget.wallet.type,
           hardwareWalletType: widget.wallet.walletInfo.hardwareWalletType!,
           onConnectDevice: (_, __) {
-            widget.trezorConnectVM.initWallet(widget.wallet);
             Navigator.of(context).pop();
           },
           isReconnect: false,
         ),
       );
 
+      if (!mounted) return;
+
       // Recheck to handle tap-backs
       if (!widget.trezorConnectVM.isConnected(widget.wallet.type)) {
         setState(() => _state = _KeyImageSyncState.initial);
         return;
       }
-    } else {
-      await widget.trezorConnectVM.initWallet(widget.wallet);
     }
 
+    // Installing the hardware service is asynchronous.  Always wait for it
+    // before key-image sync; starting both from the connection callback races
+    // on slower USB/BLE reconnects.
+    await widget.trezorConnectVM.initWallet(widget.wallet);
     final result = await widget.trezorConnectVM.syncKeyImages(widget.wallet);
-    if (result && context.mounted) {
+    if (!mounted) return;
+
+    if (result) {
       Navigator.of(context).pop();
+    } else {
+      setState(() => _state = _KeyImageSyncState.initial);
     }
   }
 }
