@@ -9,9 +9,13 @@ trap 'rm -rf "$download_dir"' EXIT
 restore_archive() {
   local url="$1"
   local destination="$2"
+  local expected_sha256="${3:-}"
   local archive="$download_dir/$(basename "$url")"
 
   curl --fail --location --retry 3 --output "$archive" "$url"
+  if [[ -n "$expected_sha256" ]]; then
+    printf '%s  %s\n' "$expected_sha256" "$archive" | shasum -a 256 -c -
+  fi
   rm -rf "$destination"
   mkdir -p "$destination"
   tar -xzf "$archive" -C "$destination"
@@ -19,7 +23,8 @@ restore_archive() {
 
 restore_archive \
   "https://github.com/MrCyjaneK/torch_dart/releases/download/v1.0.17/torch_dart-v1.0.17.tar.gz" \
-  "$project_root/scripts/torch_dart"
+  "$project_root/scripts/torch_dart" \
+  "d7ad0dbb63e1dee16a1d28f375d9e570ab82d77999a0e070111b694c7c8c371e"
 restore_archive \
   "https://github.com/cake-tech/reown_flutter/releases/download/v0.0.4/reown_flutter-v0.0.4.tar.gz" \
   "$project_root/scripts/reown_flutter"
