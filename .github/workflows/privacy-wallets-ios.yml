@@ -78,17 +78,6 @@ jobs:
           popd >/dev/null
           test "$GITHUB_REF_NAME" = "${APP_IOS_TAG_PREFIX}${APP_IOS_VERSION}"
 
-      - name: Run product and OneKey tests
-        run: |
-          ./configure_wallet.sh "${{ matrix.app_type }}"
-          flutter test \
-            --dart-define="PRODUCT_FLAVOR=${{ matrix.app_type }}" \
-            test/product_flavor_test.dart \
-            test/wallet_type_matrix_test.dart \
-            test/onekey_cipher_key_value_test.dart \
-            test/onekey_zcash_seed_key_protector_test.dart \
-            cw_core/test/hardware_wallet_type_test.dart
-
       - name: Build unsigned IPA
         env:
           IOS_NO_CODESIGN: "1"

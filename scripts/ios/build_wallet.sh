@@ -15,6 +15,10 @@ app_type="$1"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/../.." && pwd)"
 
+"$project_root/scripts/prepare_torch.sh"
+"$project_root/scripts/prepare_reown.sh"
+"$project_root/scripts/build_bitbox_flutter.sh"
+
 "$project_root/configure_wallet_ios.sh" "$app_type"
 
 pushd "$script_dir" >/dev/null
